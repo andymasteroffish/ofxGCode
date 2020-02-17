@@ -6,7 +6,7 @@
 
 #include "ofxGCode.hpp"
 
-void ofxGCode::setup(){
+void ofxGCode::setup(float _inches2pixels){
     //set some defaults
     max_speed = 10000;
     speed = 5000;
@@ -16,7 +16,7 @@ void ofxGCode::setup(){
     //inches for axidraw
 //    plotter_x_limit = 11;
 //    plotter_y_limit = 8.5;
-    inches2pixels = 0.007;//0.01;
+    inches2pixels = _inches2pixels;
     
     show_transit_lines = true;
     show_path_with_color = true;
@@ -137,10 +137,10 @@ void ofxGCode::generate_gcode(){
         bool skip = false;
         if (commands.size() > 2){
             if (pnt.pressure < 1){
-                cout<<"check "<<move_command.substr(2)<<" VS "<<commands[commands.size()-1].substr(2)<<endl;
+                //cout<<"check "<<move_command.substr(2)<<" VS "<<commands[commands.size()-1].substr(2)<<endl;
                 if(move_command.substr(2) == commands[commands.size()-1].substr(2)){
                     skip = true;
-                    cout<<"fuck this skip "<<move_command<<endl;
+                    //cout<<"fuck this skip "<<move_command<<endl;
                 }
             }
         }
@@ -189,6 +189,8 @@ void ofxGCode::print(){
 
 
 void ofxGCode::save(string name){
+    generate_gcode();
+    
     cout<<"saving "<<commands.size()<<" commands"<<endl;
     ofFile myTextFile;
     myTextFile.open(name,ofFile::WriteOnly);
@@ -250,6 +252,9 @@ void ofxGCode::end_shape(bool close){
     }
 }
 
+void ofxGCode::line(GLine _line){
+    line(_line.a.x,_line.a.y, _line.b.x,_line.b.y);
+}
 void ofxGCode::line(ofVec2f a, ofVec2f b, bool lift_pen){
     line(a.x, a.y, b.x, b.y);
 }

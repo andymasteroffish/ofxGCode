@@ -14,11 +14,12 @@
 #include "ofMain.h"
 #include "Clipping.hpp"
 #include "GCodePoint.h"
+#include "GLine.hpp"
 
 class ofxGCode{
 public:
     
-    void setup();
+    void setup(float _inches2pixels = 0.01);
     void clear();
     
     void draw();
@@ -39,6 +40,7 @@ public:
     void vertex(float x, float y);
     void end_shape(bool close);
     
+    void line(GLine _line);
     void line(ofVec2f a, ofVec2f b, bool lift_pen=false);
     void line(float x1, float y1, float x2, float y2);
     void line(float x1, float y1, float x2, float y2, bool lift_pen);
