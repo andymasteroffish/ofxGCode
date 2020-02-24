@@ -6,7 +6,7 @@
 
 #include "ofxGCode.hpp"
 
-void ofxGCode::setup(float _inches2pixels){
+void ofxGCode::setup(float _pixels_per_inch){
     //set some defaults
     max_speed = 10000;
     speed = 5000;
@@ -14,9 +14,7 @@ void ofxGCode::setup(float _inches2pixels){
     circle_resolution = 50;
     
     //inches for axidraw
-//    plotter_x_limit = 11;
-//    plotter_y_limit = 8.5;
-    inches2pixels = _inches2pixels;
+    pixels_per_inch = _pixels_per_inch;
     
     show_transit_lines = true;
     show_path_with_color = true;
@@ -28,6 +26,8 @@ void ofxGCode::setup(float _inches2pixels){
     clear();
     
     debug_show_point_numbers = false;
+    
+    demo_col.set(0,0,0);
 }
 
 void ofxGCode::clear(){
@@ -69,9 +69,9 @@ void ofxGCode::draw(){
             }else{
                 float speed_prc = ofMap(speed, 1000, max_speed, 1, 0);  //setting an arbitrary min
                 speed_prc = powf(speed_prc, 0.5);                       //smoothing this out since a medium speed still looks pretty black
-                ofSetColor(0, speed_prc * 255);
+                ofSetColor(demo_col.r, demo_col.g, demo_col.b, speed_prc * 255);
                 
-                //faidng between colors to show order
+                //fading between colors to show order
                 if (show_path_with_color){
                     float prc = (float)i/(float)list.size();
                     ofSetColor(0, 255.0*(1.0-prc), 255*prc);
@@ -116,10 +116,13 @@ void ofxGCode::generate_gcode(){
     float prev_speed = max_speed;
     float prev_pressure = 0;
     
+    float inches_per_pixel = 1.0 / pixels_per_inch;
+    cout<<"inches per pixel "<<inches_per_pixel<<endl;
+    
     for (int i=0; i<list.size(); i++){
         GCodePoint pnt = list[i];
         //ofVec2f plotter_pos = screen_point_to_plotter(list[i].x,list[i].y);
-        ofVec2f plotter_pos = ofVec2f(list[i].x * inches2pixels, list[i].y * inches2pixels);
+        ofVec2f plotter_pos = ofVec2f(list[i].x * inches_per_pixel, list[i].y * inches_per_pixel);
         
         
         string move_command = "";

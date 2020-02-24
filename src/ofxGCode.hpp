@@ -19,7 +19,7 @@
 class ofxGCode{
 public:
     
-    void setup(float _inches2pixels = 0.01);
+    void setup(float _pixels_per_inch = 100);
     void clear();
     
     void draw();
@@ -62,7 +62,7 @@ public:
     
     
     //float plotter_x_limit, plotter_y_limit;
-    float inches2pixels;    //converison unit
+    float pixels_per_inch;    //converison unit
     
     float speed;
     float max_speed;
@@ -89,6 +89,8 @@ public:
     //showing info
     bool show_transit_lines;
     bool show_path_with_color;
+    
+    ofColor demo_col;
     
 };
 
