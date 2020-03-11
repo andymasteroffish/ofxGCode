@@ -15,7 +15,9 @@ class GLine{
 public:
     
     void set(ofVec2f _a, ofVec2f _b);
+    void set(GLine other);
     void set(float x1, float y1, float x2, float y2);
+    GLine get_offset(ofVec2f offset);
     void draw();
     
     ofVec2f a, b;

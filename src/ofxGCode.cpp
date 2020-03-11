@@ -247,6 +247,10 @@ void ofxGCode::vertex(float x, float y){
     shape_pnts.push_back(ofVec2f(x,y));
 }
 void ofxGCode::end_shape(bool close){
+    if (shape_pnts.size() < 2){
+        //cout<<"not enough points to make a shape"<<endl;
+        return;
+    }
     for (int i=0; i<shape_pnts.size()-1; i++){
         line(shape_pnts[i].x, shape_pnts[i].y, shape_pnts[i+1].x, shape_pnts[i+1].y, i==0);
     }
@@ -709,7 +713,279 @@ float ofxGCode::measureTransitDistance(){
     return distance;
 }
 
+//this would be more efficient if you used Trammel's clipping class
+//this thing is wildly inefficient
+void ofxGCode::clip_inside(ofRectangle bounding_box){
+    
+    //get a list of points for the bounds
+    vector<ofVec2f> bounds;
+    bounds.push_back( ofVec2f(bounding_box.x,bounding_box.y));
+    bounds.push_back( ofVec2f(bounding_box.x+bounding_box.width, bounding_box.y));
+    bounds.push_back( ofVec2f(bounding_box.x+bounding_box.width, bounding_box.y+bounding_box.height));
+    bounds.push_back( ofVec2f(bounding_box.x, bounding_box.y+bounding_box.height));
+    
+    //this should really just be a helper for the polygon funciton
+    clip_inside(bounds);
+    
+    
+//    //go through all points to see if they make up a line that passes through the bounds
+//    //this probably will not work with weird shapes that create more than 2 intersections
+//    for (int i=0; i<list.size()-1; i++){
+//        GCodePoint * pnt = &list[i];
+//        GCodePoint * next = &list[i+1];
+//
+//        //we only care if the pen is down
+//        if (next->pressure > 0){
+//            vector<ofPoint> intersects = find_intersections(*pnt, *next, bounds);
+//            if (intersects.size() >= 2){
+//
+//                //figure out which intersect is closer to eahc point
+//                ofPoint close_to_pnt = intersects[0];
+//                ofPoint close_to_next = intersects[0];
+//                float min_dist_to_pnt = ofDistSquared(close_to_pnt.x, close_to_pnt.y, pnt->x, pnt->y);
+//                float min_dist_to_next = ofDistSquared(close_to_pnt.x, close_to_pnt.y, next->x, next->y);
+//
+//                for (int k=1; k<intersects.size(); k++){
+//                    float dist_to_pnt = ofDistSquared(intersects[k].x, intersects[k].y, pnt->x, pnt->y);
+//                    float dist_to_next = ofDistSquared(intersects[k].x, intersects[k].y, next->x, next->y);
+//                    if (dist_to_pnt < min_dist_to_pnt){
+//                        close_to_pnt = intersects[k];
+//                        min_dist_to_pnt = dist_to_pnt;
+//                    }
+//                    if (dist_to_next < min_dist_to_next){
+//                        close_to_next = intersects[k];
+//                        min_dist_to_next = dist_to_next;
+//                    }
+//                }
+//
+//                //insert them as new points
+//                GCodePoint new_pnt = GCodePoint(close_to_pnt.x,close_to_pnt.y, next->speed, next->pressure);
+//                GCodePoint new_next = GCodePoint(close_to_next.x,close_to_next.y, next->speed, 0);
+//
+//                list.insert(list.begin()+i+1, new_next);
+//                list.insert(list.begin()+i+1, new_pnt);
+//            }
+//        }
+//    }
+//
+//    //go though all points to see if they make up a line partially inside the bounds
+//    for (int i=0; i<list.size(); i++){
+//        GCodePoint * pnt = &list[i];
+//        if (bounding_box.inside(pnt->x, pnt->y)){
+//
+//            //if pen was down to get here, we need to consider what came before
+//            bool preserve_point = false;
+//            if (pnt->pressure > 0 && i > 0){
+//                GCodePoint prev = list[i-1];
+//
+//                if (!bounding_box.inside(prev.x, prev.y)){
+//                    ofPoint intersect = find_intersection(*pnt, prev, bounds);
+//                    //move this point to the intersect
+//                    if (intersect.x != -1){
+//                        pnt->x = intersect.x;
+//                        pnt->y = intersect.y;
+//                        preserve_point = true;
+//                    }else{
+//                        //if we fucked up, just lift up the pen
+//                        pnt->pressure = 0;
+//                    }
+//                }
+//            }
+//
+//            //what comes next?
+//            if (i < list.size()-1){
+//                GCodePoint * next = &list[i+1];
+//                //if the next one is also inside, we can just kill this one
+//                //also if the next point is a pen-up move
+//                if (!preserve_point && (bounding_box.inside(next->x, next->y) || next->pressure ==0) ){
+//                    list.erase(list.begin()+i);
+//                    i--;
+//                }
+//                //if it is outside we should clip
+//                else if (!preserve_point && !bounding_box.inside(next->x, next->y)){
+//                    ofPoint intersect = find_intersection(*pnt, *next, bounds);
+//                    //move this point to the intersect
+//                    if (intersect.x != -1){
+//                        pnt->x = intersect.x;
+//                        pnt->y = intersect.y;
+//                    }
+//                }
+//                else{
+//                    next->pressure = 0;
+//                }
+//            }
+//        }
+//    }
+    
+}
 
+void ofxGCode::clip_inside(vector<ofVec2f> bounds){
+    cout<<"clip clopping"<<endl;
+    
+    //go through all points to see if they make up a line that passes through the bounds
+    //this probably will not work with weird shapes that create more than 2 intersections
+    for (int i=0; i<list.size()-1; i++){
+        GCodePoint * pnt = &list[i];
+        GCodePoint * next = &list[i+1];
+        
+        //we only care if the pen is down
+        if (next->pressure > 0){
+            vector<ofPoint> intersects = find_intersections(*pnt, *next, bounds);
+            if (intersects.size() >= 2){
+                
+                //figure out which intersect is closer to eahc point
+                ofPoint close_to_pnt = intersects[0];
+                ofPoint close_to_next = intersects[0];
+                float min_dist_to_pnt = ofDistSquared(close_to_pnt.x, close_to_pnt.y, pnt->x, pnt->y);
+                float min_dist_to_next = ofDistSquared(close_to_pnt.x, close_to_pnt.y, next->x, next->y);
+                
+                for (int k=1; k<intersects.size(); k++){
+                    float dist_to_pnt = ofDistSquared(intersects[k].x, intersects[k].y, pnt->x, pnt->y);
+                    float dist_to_next = ofDistSquared(intersects[k].x, intersects[k].y, next->x, next->y);
+                    if (dist_to_pnt < min_dist_to_pnt){
+                        close_to_pnt = intersects[k];
+                        min_dist_to_pnt = dist_to_pnt;
+                    }
+                    if (dist_to_next < min_dist_to_next){
+                        close_to_next = intersects[k];
+                        min_dist_to_next = dist_to_next;
+                    }
+                }
+                
+                //insert them as new points
+                GCodePoint new_pnt = GCodePoint(close_to_pnt.x,close_to_pnt.y, next->speed, next->pressure);
+                GCodePoint new_next = GCodePoint(close_to_next.x,close_to_next.y, next->speed, 0);
+                
+                list.insert(list.begin()+i+1, new_next);
+                list.insert(list.begin()+i+1, new_pnt);
+            }
+        }
+    }
+    
+    //go though all points to see if they make up a line partially inside the bounds
+    cout<<"size: "<<list.size()<<endl;
+    for (int i=0; i<list.size(); i++){
+        GCodePoint * pnt = &list[i];
+        if (checkInPolygon(bounds, pnt->x, pnt->y)){
+            
+            //if pen was down to get here, we need to consider what came before
+            bool preserve_point = false;
+            if (pnt->pressure > 0 && i > 0){
+                GCodePoint prev = list[i-1];
+                
+                if (!checkInPolygon(bounds, prev.x, prev.y)){
+                    cout<<"bad boy "<<i<<" at "<<pnt->x<<","<<pnt->y<<endl;
+                    ofPoint intersect = find_intersection(*pnt, prev, bounds);
+                    //move this point to the intersect
+                    if (intersect.x != -1){
+                        cout<<"  move to "<<intersect.x<<" "<<intersect.y<<endl;
+                        pnt->x = intersect.x;
+                        pnt->y = intersect.y;
+                        preserve_point = true;
+                    }else{
+                        cout<<"  we fucked up at "<<i<<endl;
+                        cout<<"  pnt "<<pnt->x<<","<<pnt->y<<endl;
+                        cout<<"  prev "<<prev.x<<","<<prev.y<<endl;
+                        //if we fucked up, just lift up the pen
+                        pnt->pressure = 0;
+                    }
+                }
+            }
+            
+            //what comes next?
+            if (i < list.size()-1){
+                GCodePoint * next = &list[i+1];
+                //if the next one is also inside, we can just kill this one
+                //also if the next point is a pen-up move
+                if (!preserve_point && (checkInPolygon(bounds, next->x, next->y) || next->pressure ==0) ){
+                    cout<<"kill "<<i<<" at "<<list[i].x<<" , "<<list[i].y <<endl;
+                    list.erase(list.begin()+i);
+                    i--;
+                    //next->pressure = 0;
+                }
+                //if it is outside we should clip
+                else if (!preserve_point && !checkInPolygon(bounds, next->x, next->y)){
+                    cout<<"next bad boy "<<i<<" at "<<next->x<<","<<next->y<<endl;
+                    ofPoint intersect = find_intersection(*pnt, *next, bounds);
+                    //move this point to the intersect
+                    if (intersect.x != -1){
+                        cout<<"  move to "<<intersect.x<<" "<<intersect.y<<endl;
+                        pnt->x = intersect.x;
+                        pnt->y = intersect.y;
+                        pnt->pressure = 0;
+                    }else{
+                        cout<<"  late fucked up at "<<i<<endl;
+                        cout<<"  pnt "<<pnt->x<<","<<pnt->y<<endl;
+                        cout<<"  prev "<<next->x<<","<<next->y<<endl;
+                    }
+                }
+                else{
+                    cout<<"setting pressure for "<<i<<" to 0"<<endl;
+                    next->pressure = 0;
+                }
+                
+            }
+        }
+    }
+}
+
+ofPoint ofxGCode::find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds){
+    for (int i=0; i<bounds.size(); i++){
+        int next_id = (i+1)%bounds.size();
+        
+        ofPoint out;
+        ofPoint pnt_a = ofPoint(a.x, a.y);
+        ofPoint pnt_b = ofPoint(b.x, b.y);
+        ofPoint border1 = bounds[i];
+        ofPoint border2 = bounds[next_id];
+        
+        if (ofLineSegmentIntersection(pnt_a, pnt_b, border1, border2, out)){
+//            float noise_range = 2;
+//            out.x += ofRandom(-noise_range, noise_range);
+//            out.y += ofRandom(-noise_range, noise_range);
+            return out;
+        }
+    }
+    
+    return ofPoint(-1,-1);
+}
+
+vector<ofPoint> ofxGCode::find_intersections(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds){
+    vector<ofPoint> vals;
+    for (int i=0; i<bounds.size(); i++){
+        int next_id = (i+1)%bounds.size();
+        
+        ofPoint out;
+        ofPoint pnt_a = ofPoint(a.x, a.y);
+        ofPoint pnt_b = ofPoint(b.x, b.y);
+        ofPoint border1 = bounds[i];
+        ofPoint border2 = bounds[next_id];
+        
+        if (ofLineSegmentIntersection(pnt_a, pnt_b, border1, border2, out)){
+//            float noise_range = 2;
+//            out.x += ofRandom(-noise_range, noise_range);
+//            out.y += ofRandom(-noise_range, noise_range);
+            vals.push_back(out);
+        }
+    }
+    
+    return vals;
+}
+
+//--------------------------------------------------------------
+//code is a modified version of code by Randolph Franklin
+//from http://paulbourke.net/geometry/insidepoly/
+bool ofxGCode::checkInPolygon(vector<ofVec2f> p, float x, float y)
+{
+    int i, j, c = 0;
+    for (i = 0, j = p.size()-1; i < p.size(); j = i++) {
+        if ((((p[i].y <= y) && (y < p[j].y)) ||
+             ((p[j].y <= y) && (y < p[i].y))) &&
+            (x < (p[j].x - p[i].x) * (y - p[i].y) / (p[j].y - p[i].y) + p[i].x))
+            c = !c;
+    }
+    return c;
+}
 
 
 

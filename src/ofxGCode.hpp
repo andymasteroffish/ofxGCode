@@ -60,6 +60,16 @@ public:
     
     float measureTransitDistance();
     
+    void clip_inside(ofRectangle bounding_box);
+    void clip_inside(vector<ofVec2f> bounds);
+    ofPoint find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
+    vector<ofPoint> find_intersections(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
+    
+    //code is a modified version of code by Randolph Franklin
+    //from http://paulbourke.net/geometry/insidepoly/
+    bool checkInPolygon(vector<ofVec2f> p, float x, float y);
+    
+    
     
     //float plotter_x_limit, plotter_y_limit;
     float pixels_per_inch;    //converison unit
