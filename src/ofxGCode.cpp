@@ -228,7 +228,7 @@ void ofxGCode::rect(float x, float y, float w, float h){
 
 void ofxGCode::circle(float x, float y, float size){
     float angle_step =(TWO_PI/(float)circle_resolution);
-    start_shape();
+    begin_shape();
     for (int i=0; i<circle_resolution; i++){
         ofVec2f pnt;
         float angle = angle_step  * i;
@@ -240,8 +240,15 @@ void ofxGCode::circle(float x, float y, float size){
     end_shape(true);
 }
 
-void ofxGCode::start_shape(){
+void ofxGCode::begin_shape(){
     shape_pnts.clear();
+}
+void ofxGCode::start_shape(){
+    cout<<"HEY DON'T USE THIS. IT HAS A BAD NAME AND I SHOULD REMOVE IT"<<endl;
+    begin_shape();
+}
+void ofxGCode::vertex(ofVec2f p){
+    shape_pnts.push_back(p);
 }
 void ofxGCode::vertex(float x, float y){
     shape_pnts.push_back(ofVec2f(x,y));
@@ -275,7 +282,7 @@ void ofxGCode::line(float x1, float y1, float x2, float y2, bool lift_pen){
     ofVec2f p2 = getModelPoint(x2,y2);
     
     if (!clip.clip(p1, p2)) {
-        cout<<"no part of this line is on screen"<<endl;
+        //cout<<"no part of this line is on screen"<<endl;
         return;
     }
     
@@ -820,7 +827,9 @@ void ofxGCode::clip_inside(ofRectangle bounding_box){
 }
 
 void ofxGCode::clip_inside(vector<ofVec2f> bounds){
-    cout<<"clip clopping"<<endl;
+    if (list.size() < 2){
+        return;
+    }
     
     //go through all points to see if they make up a line that passes through the bounds
     //this probably will not work with weird shapes that create more than 2 intersections
@@ -863,7 +872,7 @@ void ofxGCode::clip_inside(vector<ofVec2f> bounds){
     }
     
     //go though all points to see if they make up a line partially inside the bounds
-    cout<<"size: "<<list.size()<<endl;
+    //cout<<"size: "<<list.size()<<endl;
     for (int i=0; i<list.size(); i++){
         GCodePoint * pnt = &list[i];
         if (checkInPolygon(bounds, pnt->x, pnt->y)){
@@ -874,18 +883,18 @@ void ofxGCode::clip_inside(vector<ofVec2f> bounds){
                 GCodePoint prev = list[i-1];
                 
                 if (!checkInPolygon(bounds, prev.x, prev.y)){
-                    cout<<"bad boy "<<i<<" at "<<pnt->x<<","<<pnt->y<<endl;
+                    //cout<<"bad boy "<<i<<" at "<<pnt->x<<","<<pnt->y<<endl;
                     ofPoint intersect = find_intersection(*pnt, prev, bounds);
                     //move this point to the intersect
                     if (intersect.x != -1){
-                        cout<<"  move to "<<intersect.x<<" "<<intersect.y<<endl;
+                        //cout<<"  move to "<<intersect.x<<" "<<intersect.y<<endl;
                         pnt->x = intersect.x;
                         pnt->y = intersect.y;
                         preserve_point = true;
                     }else{
-                        cout<<"  we fucked up at "<<i<<endl;
-                        cout<<"  pnt "<<pnt->x<<","<<pnt->y<<endl;
-                        cout<<"  prev "<<prev.x<<","<<prev.y<<endl;
+//                        cout<<"  we fucked up at "<<i<<endl;
+//                        cout<<"  pnt "<<pnt->x<<","<<pnt->y<<endl;
+//                        cout<<"  prev "<<prev.x<<","<<prev.y<<endl;
                         //if we fucked up, just lift up the pen
                         pnt->pressure = 0;
                     }
@@ -898,29 +907,29 @@ void ofxGCode::clip_inside(vector<ofVec2f> bounds){
                 //if the next one is also inside, we can just kill this one
                 //also if the next point is a pen-up move
                 if (!preserve_point && (checkInPolygon(bounds, next->x, next->y) || next->pressure ==0) ){
-                    cout<<"kill "<<i<<" at "<<list[i].x<<" , "<<list[i].y <<endl;
+                    //cout<<"kill "<<i<<" at "<<list[i].x<<" , "<<list[i].y <<endl;
                     list.erase(list.begin()+i);
                     i--;
                     //next->pressure = 0;
                 }
                 //if it is outside we should clip
                 else if (!preserve_point && !checkInPolygon(bounds, next->x, next->y)){
-                    cout<<"next bad boy "<<i<<" at "<<next->x<<","<<next->y<<endl;
+                    //cout<<"next bad boy "<<i<<" at "<<next->x<<","<<next->y<<endl;
                     ofPoint intersect = find_intersection(*pnt, *next, bounds);
                     //move this point to the intersect
                     if (intersect.x != -1){
-                        cout<<"  move to "<<intersect.x<<" "<<intersect.y<<endl;
+                       // cout<<"  move to "<<intersect.x<<" "<<intersect.y<<endl;
                         pnt->x = intersect.x;
                         pnt->y = intersect.y;
                         pnt->pressure = 0;
                     }else{
-                        cout<<"  late fucked up at "<<i<<endl;
-                        cout<<"  pnt "<<pnt->x<<","<<pnt->y<<endl;
-                        cout<<"  prev "<<next->x<<","<<next->y<<endl;
+//                        cout<<"  late fucked up at "<<i<<endl;
+//                        cout<<"  pnt "<<pnt->x<<","<<pnt->y<<endl;
+//                        cout<<"  prev "<<next->x<<","<<next->y<<endl;
                     }
                 }
                 else{
-                    cout<<"setting pressure for "<<i<<" to 0"<<endl;
+                    //cout<<"setting pressure for "<<i<<" to 0"<<endl;
                     next->pressure = 0;
                 }
                 

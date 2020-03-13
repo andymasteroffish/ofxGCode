@@ -36,7 +36,9 @@ public:
     
     void circle(float x, float y, float size);
     
+    void begin_shape();
     void start_shape();
+    void vertex(ofVec2f p);
     void vertex(float x, float y);
     void end_shape(bool close);
     
