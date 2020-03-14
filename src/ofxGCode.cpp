@@ -244,7 +244,7 @@ void ofxGCode::begin_shape(){
     shape_pnts.clear();
 }
 void ofxGCode::start_shape(){
-    cout<<"HEY DON'T USE THIS. IT HAS A BAD NAME AND I SHOULD REMOVE IT"<<endl;
+    cout<<"HEY DON'T USE THIS. start_shape IS A BAD NAME AND I SHOULD REMOVE IT. USE begin_shape"<<endl;
     begin_shape();
 }
 void ofxGCode::vertex(ofVec2f p){
@@ -435,6 +435,7 @@ ofVec2f ofxGCode::getModelPoint(float x, float y){
 
 //this is not perfect yet. Some of the resulting order is deifnitely not as efficient as it could be
 void ofxGCode::sort(){
+    //cout<<"---sorting---"<<endl;
     vector<GCodePoint> destination;
     destination.clear();
     vector<GCodePoint> src(list);    //clones the vector
@@ -489,8 +490,13 @@ void ofxGCode::sort(){
         GCodePoint startFrame = src[startIndex];
         GCodePoint endFrame = src[endIndex];
         
+        if (startFrame.do_not_reverse){
+            //cout<<"I am told not to revers "<<startFrame.x<<","<<startFrame.y<<endl;
+            reverseOrder = false;
+        }
+        
         if (reverseOrder) {
-            //cout<<"reverse this one"<<endl;
+            //cout<<"reverse the one at "<<startFrame.x<<" , "<<startFrame.y<<endl;
             // Swap commands of first and last segment if in reverse order
             // THIS NEEDED TO BE POINTERS to actually change the data
             GCodePoint * t0 = &src[startIndex];
@@ -949,9 +955,6 @@ ofPoint ofxGCode::find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> 
         ofPoint border2 = bounds[next_id];
         
         if (ofLineSegmentIntersection(pnt_a, pnt_b, border1, border2, out)){
-//            float noise_range = 2;
-//            out.x += ofRandom(-noise_range, noise_range);
-//            out.y += ofRandom(-noise_range, noise_range);
             return out;
         }
     }
@@ -971,14 +974,72 @@ vector<ofPoint> ofxGCode::find_intersections(GCodePoint a, GCodePoint b, vector<
         ofPoint border2 = bounds[next_id];
         
         if (ofLineSegmentIntersection(pnt_a, pnt_b, border1, border2, out)){
-//            float noise_range = 2;
-//            out.x += ofRandom(-noise_range, noise_range);
-//            out.y += ofRandom(-noise_range, noise_range);
             vals.push_back(out);
         }
     }
     
     return vals;
+}
+
+//--------------------------------------------------------------
+//any lines outside of this boun will be forced to draw from the center out. Does not work on shapes.
+void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
+    //cout<<"---set outwards---"<<endl;
+    
+    ofVec2f center;
+    center.x = (safe_area.x + safe_area.x+safe_area.width)/2;
+    center.y = (safe_area.y + safe_area.y+safe_area.height)/2;
+    
+    //cout<<"center "<<center.x<<" , "<<center.y<<endl;
+    
+    for (int i=0; i<list.size()-1; i++){
+        GCodePoint * pnt_a = &list[i];
+        GCodePoint * pnt_b = &list[i+1];
+        
+        bool next_segment_is_good = true;
+        if (i<list.size()-2){
+            next_segment_is_good = list[i+2].pressure == 0;
+        }
+        
+        //this only works on lines, so we need to identify when we're looking at a single line segment
+        if (pnt_a->pressure == 0 && pnt_b->pressure > 0 && next_segment_is_good){
+            //cout<<"line from "<<pnt_a->x<<","<<pnt_a->y<<"  to "<<pnt_b->x<<","<<pnt_a->y<<endl;
+            
+            //is at least one point outside?
+            if (!safe_area.inside(pnt_a->x, pnt_a->y) || !safe_area.inside(pnt_b->x, pnt_b->y)){
+                //cout<<"  a point is outside"<<endl;
+                
+                //if they are in the right order, just keep them that way
+                if (ofDistSquared(center.x, center.y, pnt_a->x, pnt_a->y) < ofDistSquared(center.x, center.y, pnt_b->x, pnt_b->y)){
+                   // cout<<"  we are in the right direction"<<endl;
+                    //do nothing
+                }else{
+                    //cout<<"  we need to flip"<<endl;
+                    float a_x = pnt_a->x;
+                    float a_y = pnt_a->y;
+                   
+                    pnt_a->x = pnt_b->x;
+                    pnt_a->y = pnt_b->y;
+                    pnt_b->x = a_x;
+                    pnt_b->y = a_y;
+                    
+                    // float b_pressure = pnt_b->pressure;
+//                    GCodePoint temp;
+//                    temp.set_from_point(*pnt_a);
+//                    pnt_a->set_from_point(*pnt_b);
+//                    pnt_b->set_from_point(temp);
+//                    pnt_a->pressure = 0;
+                    
+                }
+                
+                //either way, thise line is not allowed to be reversed in sort()
+                pnt_a->do_not_reverse = true;
+                pnt_b->do_not_reverse = true;
+                
+            }
+            
+        }
+    }
 }
 
 //--------------------------------------------------------------

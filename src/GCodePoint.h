@@ -16,7 +16,22 @@ public:
     float speed;
     float pressure;
     
-    inline GCodePoint( float _x, float _y, float _speed, float _pressure ):x(_x), y(_y), speed(_speed), pressure(_pressure) {}
+    bool do_not_reverse;
+    
+    inline GCodePoint( float _x, float _y, float _speed, float _pressure ):x(_x), y(_y), speed(_speed), pressure(_pressure) {
+        do_not_reverse = false;
+    }
+    
+    inline GCodePoint() {
+    }
+    
+    void set_from_point(GCodePoint other){
+        x = other.x;
+        y = other.y;
+        speed = other.speed;
+        pressure = other.pressure;
+        do_not_reverse = other.do_not_reverse;
+    }
     
     //TODO: MAKE SURE THIS WORKS NOW THAT YOU TURNED IT TO FLOATS
     bool equals(GCodePoint other){

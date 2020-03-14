@@ -67,6 +67,9 @@ public:
     ofPoint find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
     vector<ofPoint> find_intersections(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
     
+    //any lines outside of this boun will be forced to draw from the center out. Does not work on shapes.
+    void set_outwards_only_bounds(ofRectangle safe_area);
+    
     //code is a modified version of code by Randolph Franklin
     //from http://paulbourke.net/geometry/insidepoly/
     bool checkInPolygon(vector<ofVec2f> p, float x, float y);
