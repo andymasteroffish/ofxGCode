@@ -18,6 +18,7 @@ void ofxGCode::setup(float _pixels_per_inch){
     
     show_transit_lines = true;
     show_path_with_color = true;
+    show_do_not_reverse = false;
     
     clip.setup(ofVec2f(0, 0), ofVec2f(ofGetWidth(), ofGetHeight()));
     
@@ -75,6 +76,21 @@ void ofxGCode::draw(){
                 if (show_path_with_color){
                     float prc = (float)i/(float)list.size();
                     ofSetColor(0, 255.0*(1.0-prc), 255*prc);
+                }
+                
+                if (show_do_not_reverse && pnt.do_not_reverse){
+                    ofSetColor(255, 38, 226);
+                    //throw wings on it
+                    float prc = 0.9;
+                    ofVec2f wing_pnt;
+                    wing_pnt.x = (1.0-prc)*prev_x + prc*pnt.x;
+                    wing_pnt.y = (1.0-prc)*prev_y + prc*pnt.y;
+                    //ofDrawCircle(wing_pnt.x, wing_pnt.y, 2);
+                    float angle = atan2(prev_y-pnt.y, prev_x-pnt.x);
+                    float dist = 7;
+                    float spread = PI/8;
+                    ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle+spread)*dist, wing_pnt.y+sin(angle+spread)*dist);
+                    ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle-spread)*dist, wing_pnt.y+sin(angle-spread)*dist);
                 }
             }
             

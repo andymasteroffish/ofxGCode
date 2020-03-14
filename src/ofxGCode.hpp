@@ -104,6 +104,7 @@ public:
     //showing info
     bool show_transit_lines;
     bool show_path_with_color;
+    bool show_do_not_reverse;
     
     ofColor demo_col;
     
