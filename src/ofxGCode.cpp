@@ -49,9 +49,11 @@ void ofxGCode::clear(){
     commands.clear();
 }
 
-void ofxGCode::draw(){
+void ofxGCode::draw(int max_lines_to_show){
     //ofSetColor(255);
     //fbo.draw(0,0);
+    
+    int draw_count = 0;
     
     if (list.size() > 1){
         float prev_x = list[0].x;
@@ -59,8 +61,12 @@ void ofxGCode::draw(){
         float prev_speed = list[0].speed;
         float prev_pressure = list[0].pressure;
         for (int i=0; i<list.size(); i++){
+            if (draw_count > max_lines_to_show && max_lines_to_show > 0){
+                return;
+            }
             GCodePoint pnt = list[i];
             if (pnt.pressure == 0){
+                draw_count++;
                 if (show_transit_lines){
                     ofSetColor(255, 0,0, 60);
                 }else{
@@ -80,17 +86,19 @@ void ofxGCode::draw(){
                 
                 if (show_do_not_reverse && pnt.do_not_reverse){
                     ofSetColor(255, 38, 226);
-                    //throw wings on it
-                    float prc = 0.9;
-                    ofVec2f wing_pnt;
-                    wing_pnt.x = (1.0-prc)*prev_x + prc*pnt.x;
-                    wing_pnt.y = (1.0-prc)*prev_y + prc*pnt.y;
-                    //ofDrawCircle(wing_pnt.x, wing_pnt.y, 2);
-                    float angle = atan2(prev_y-pnt.y, prev_x-pnt.x);
-                    float dist = 7;
-                    float spread = PI/8;
-                    ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle+spread)*dist, wing_pnt.y+sin(angle+spread)*dist);
-                    ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle-spread)*dist, wing_pnt.y+sin(angle-spread)*dist);
+                    if (list[i-1].pressure == 0){
+                        //throw wings on it
+                        float prc = 0.9;
+                        ofVec2f wing_pnt;
+                        wing_pnt.x = (1.0-prc)*prev_x + prc*pnt.x;
+                        wing_pnt.y = (1.0-prc)*prev_y + prc*pnt.y;
+                        //ofDrawCircle(wing_pnt.x, wing_pnt.y, 2);
+                        float angle = atan2(prev_y-pnt.y, prev_x-pnt.x);
+                        float dist = 7;
+                        float spread = PI/8;
+                        ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle+spread)*dist, wing_pnt.y+sin(angle+spread)*dist);
+                        ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle-spread)*dist, wing_pnt.y+sin(angle-spread)*dist);
+                    }
                 }
             }
             
@@ -998,9 +1006,12 @@ vector<ofPoint> ofxGCode::find_intersections(GCodePoint a, GCodePoint b, vector<
 }
 
 //--------------------------------------------------------------
-//any lines outside of this boun will be forced to draw from the center out. Does not work on shapes.
+//any lines outside of this boun will be forced to draw from the center out.
 void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
     //cout<<"---set outwards---"<<endl;
+    if (list.size() < 2){
+        return;
+    }
     
     ofVec2f center;
     center.x = (safe_area.x + safe_area.x+safe_area.width)/2;
@@ -1008,6 +1019,76 @@ void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
     
     //cout<<"center "<<center.x<<" , "<<center.y<<endl;
     
+    for (int i=0; i<list.size()-1; i++){
+        GCodePoint pnt_a = list[i];
+        //is this the start of a line segment?
+        if (pnt_a.pressure == 0){
+            int end_id = i+1;
+            GCodePoint pnt_b = list[end_id];
+            for (int k=i+1; k<list.size(); k++){
+                if (list[k].pressure == 0){
+                    break;
+                }else{
+                    end_id = k;
+                    pnt_b = list[k];
+                }
+            }
+
+            //is at least one point outside?
+            if (!safe_area.inside(pnt_a.x, pnt_a.y) || !safe_area.inside(pnt_b.x, pnt_b.y)){
+                
+                //if they're both outside, we need to split
+                if (!safe_area.inside(pnt_a.x, pnt_a.y) && !safe_area.inside(pnt_b.x, pnt_b.y)){
+//                    cout<<"gotta split at "<<list[i].x<<" , "<<list[i].y<<endl;
+//                    cout<<" ends  at "<<list[end_id].x<<" , "<<list[end_id].y<<endl;
+//                    cout<<"  i: "<<i<<"  end id "<<end_id<<endl;
+                    //start at a and move along until we find a segment in the safe zone
+                    for (int p=i+1; p<=end_id; p++){
+                        //cout<<"  trying "<<list[p].x<<" , "<<list[p].y<<endl;
+                        if (safe_area.inside(list[p].x, list[p].y)){
+                           // cout<<"  "<<list[p].x<<" , "<<list[p].y<<" works"<<endl;
+                            end_id = p;
+                            pnt_b = list[p];
+                            GCodePoint new_p = GCodePoint(list[p].x,list[p].y,speed,0);
+                            list.insert(list.begin()+end_id+1, new_p);
+                            break;
+                        }
+                    }
+                }
+                
+                //if they are in the right order, just keep them that way
+                if (safe_area.inside(pnt_a.x, pnt_a.y)){
+                    //do nothing
+//                    cout<<"do nothing for "<<i<<" to "<<end_id<<endl;
+//                    cout<<"  start "<<list[i].x<<" , "<<list[i].y<<endl;
+//                    cout<<"  end "<<list[end_id].x<<" , "<<list[end_id].y<<endl;
+                }else{
+//                    cout<<"flip for "<<i<<" to "<<end_id<<endl;
+//                    cout<<"  start "<<list[i].x<<" , "<<list[i].y<<endl;
+//                    cout<<"  end "<<list[end_id].x<<" , "<<list[end_id].y<<endl;
+                    GCodePoint * t0 = &list[i];
+                    GCodePoint * t1 = &list[end_id];
+                    int temp_pressure = t0->pressure;
+                    int temp_speed = t0->speed;
+                    t0->pressure = t1->pressure;
+                    t0->speed = t1->speed;
+                    t1->pressure = temp_pressure;
+                    t1->speed = temp_speed;
+
+                    std::reverse(list.begin()+i, list.begin()+end_id+1);
+                }
+
+                //mark them all as do not reverse
+                for (int p=i; p<=end_id; p++){
+                    //cout<<"   set "<<p<<" to not reverse at "<<list[p].x<<" , "<<list[p].y<<endl;
+                    list[p].do_not_reverse = true;
+                }
+            }
+        }
+    }
+    
+    
+    /*
     for (int i=0; i<list.size()-1; i++){
         GCodePoint * pnt_a = &list[i];
         GCodePoint * pnt_b = &list[i+1];
@@ -1039,12 +1120,7 @@ void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
                     pnt_b->x = a_x;
                     pnt_b->y = a_y;
                     
-                    // float b_pressure = pnt_b->pressure;
-//                    GCodePoint temp;
-//                    temp.set_from_point(*pnt_a);
-//                    pnt_a->set_from_point(*pnt_b);
-//                    pnt_b->set_from_point(temp);
-//                    pnt_a->pressure = 0;
+
                     
                 }
                 
@@ -1056,6 +1132,7 @@ void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
             
         }
     }
+     */
 }
 
 //--------------------------------------------------------------

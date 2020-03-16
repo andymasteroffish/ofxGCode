@@ -22,7 +22,7 @@ public:
     void setup(float _pixels_per_inch = 100);
     void clear();
     
-    void draw();
+    void draw(int max_lines_to_show = -1);
     
     void generate_gcode();
     //ofVec2f screen_point_to_plotter(float x, float y);
@@ -67,7 +67,7 @@ public:
     ofPoint find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
     vector<ofPoint> find_intersections(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
     
-    //any lines outside of this boun will be forced to draw from the center out. Does not work on shapes.
+    //any lines outside of this boun will be forced to draw from the center out. 
     void set_outwards_only_bounds(ofRectangle safe_area);
     
     //code is a modified version of code by Randolph Franklin
