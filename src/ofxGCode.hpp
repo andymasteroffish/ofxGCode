@@ -105,6 +105,7 @@ public:
     bool show_transit_lines;
     bool show_path_with_color;
     bool show_do_not_reverse;
+    bool do_not_draw_dots;
     
     ofColor demo_col;
     

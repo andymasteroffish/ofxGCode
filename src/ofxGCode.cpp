@@ -19,6 +19,7 @@ void ofxGCode::setup(float _pixels_per_inch){
     show_transit_lines = true;
     show_path_with_color = true;
     show_do_not_reverse = false;
+    do_not_draw_dots = false;
     
     clip.setup(ofVec2f(0, 0), ofVec2f(ofGetWidth(), ofGetHeight()));
     
@@ -104,6 +105,8 @@ void ofxGCode::draw(int max_lines_to_show){
             
             //won't be able to see dots if we're drawing lines
             bool is_dot = prev_x == pnt.x && prev_y == pnt.y && pnt.pressure > 0;
+            
+            if (do_not_draw_dots)   is_dot = false;
             
             if (!is_dot){
                 ofDrawLine(prev_x, prev_y, pnt.x, pnt.y);
@@ -277,6 +280,9 @@ void ofxGCode::vertex(ofVec2f p){
 void ofxGCode::vertex(float x, float y){
     shape_pnts.push_back(ofVec2f(x,y));
 }
+
+// TODO: make this just add points instead of using line
+// right now every point is added twice because you make a bunch of lines
 void ofxGCode::end_shape(bool close){
     if (shape_pnts.size() < 2){
         //cout<<"not enough points to make a shape"<<endl;
@@ -872,7 +878,9 @@ void ofxGCode::clip_inside(vector<ofVec2f> bounds){
             vector<ofPoint> intersects = find_intersections(*pnt, *next, bounds);
             if (intersects.size() >= 2){
                 
-                //figure out which intersect is closer to eahc point
+                //cout<<"double intersect"<<endl;
+                
+                //figure out which intersect is closer to each point
                 ofPoint close_to_pnt = intersects[0];
                 ofPoint close_to_next = intersects[0];
                 float min_dist_to_pnt = ofDistSquared(close_to_pnt.x, close_to_pnt.y, pnt->x, pnt->y);
@@ -905,7 +913,9 @@ void ofxGCode::clip_inside(vector<ofVec2f> bounds){
     //cout<<"size: "<<list.size()<<endl;
     for (int i=0; i<list.size(); i++){
         GCodePoint * pnt = &list[i];
+        //cout<<"--checking "<<i<<"  pres: "<<pnt->pressure<<"   x: "<<pnt->x<<"  y: "<<pnt->y<<endl;
         if (checkInPolygon(bounds, pnt->x, pnt->y)){
+            //cout<<"inside at "<<pnt->x<<" , "<<pnt->y<<endl;
             
             //if pen was down to get here, we need to consider what came before
             bool preserve_point = false;
@@ -938,6 +948,12 @@ void ofxGCode::clip_inside(vector<ofVec2f> bounds){
                 //also if the next point is a pen-up move
                 if (!preserve_point && (checkInPolygon(bounds, next->x, next->y) || next->pressure ==0) ){
                     //cout<<"kill "<<i<<" at "<<list[i].x<<" , "<<list[i].y <<endl;
+                    
+                    //if pen was up to get here, we should lift the pen up for the next move
+                    if (pnt->pressure == 0){
+                        next->pressure = 0;
+                    }
+                    
                     list.erase(list.begin()+i);
                     i--;
                     //next->pressure = 0;
@@ -948,7 +964,7 @@ void ofxGCode::clip_inside(vector<ofVec2f> bounds){
                     ofPoint intersect = find_intersection(*pnt, *next, bounds);
                     //move this point to the intersect
                     if (intersect.x != -1){
-                       // cout<<"  move to "<<intersect.x<<" "<<intersect.y<<endl;
+                        //cout<<"  move to "<<intersect.x<<" "<<intersect.y<<endl;
                         pnt->x = intersect.x;
                         pnt->y = intersect.y;
                         pnt->pressure = 0;
