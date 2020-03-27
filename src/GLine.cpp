@@ -33,3 +33,21 @@ GLine GLine::get_offset(ofVec2f offset){
 void GLine::draw(){
     ofDrawLine(a,b);
 }
+
+bool GLine::clip_to_other_line(ofVec2f other_a, ofVec2f other_b){
+    return clip_to_other_line(other_a.x, other_a.y, other_b.x, other_b.y);
+}
+
+//this always assumes A is standing still
+bool GLine::clip_to_other_line(float other_a_x, float other_a_y, float other_b_x, float other_b_y){
+    ofPoint out;
+    ofPoint my_a = a;
+    ofPoint my_b = b;
+    ofPoint other_a = ofPoint(other_a_x, other_a_y);
+    ofPoint other_b = ofPoint(other_b_x, other_b_y);
+    if (ofLineSegmentIntersection(my_a, my_b, other_a, other_b, out)){
+        b = out;
+        return true;
+    }
+    return false;
+}

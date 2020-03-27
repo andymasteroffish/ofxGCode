@@ -20,6 +20,7 @@ class ofxGCode{
 public:
     
     void setup(float _pixels_per_inch = 100);
+    void set_size(int w, int h);
     void clear();
     
     void draw(int max_lines_to_show = -1);

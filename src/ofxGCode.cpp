@@ -21,15 +21,19 @@ void ofxGCode::setup(float _pixels_per_inch){
     show_do_not_reverse = false;
     do_not_draw_dots = false;
     
-    clip.setup(ofVec2f(0, 0), ofVec2f(ofGetWidth(), ofGetHeight()));
-    
-    fbo.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
-    
-    clear();
+    set_size(ofGetWidth(), ofGetHeight());
     
     debug_show_point_numbers = false;
     
     demo_col.set(0,0,0);
+}
+
+void ofxGCode::set_size(int w, int h){
+    clip.setup(ofVec2f(0, 0), ofVec2f(w,h));
+    
+    fbo.allocate(w,h, GL_RGBA);
+    
+    clear();
 }
 
 void ofxGCode::clear(){
@@ -1072,13 +1076,31 @@ void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
                     }
                 }
                 
+                bool need_to_flip = false;
+                
+                //if neight is in the safe area, figure out which is closer to the center
+                if (!safe_area.inside(pnt_b.x, pnt_b.y) && !safe_area.inside(pnt_a.x, pnt_a.y)){
+                    float dist_a = ofDistSquared(pnt_a.x, pnt_a.y, center.x, center.y);
+                    float dist_b = ofDistSquared(pnt_b.x, pnt_b.y, center.x, center.y);
+                    if (dist_b < dist_a){
+                        need_to_flip = true;
+                    }
+                }
+                
+                //if b is inside and a is out, we need to flip
+                if (safe_area.inside(pnt_b.x, pnt_b.y) && !safe_area.inside(pnt_a.x, pnt_a.y)){
+                    need_to_flip = true;
+                }
+                
                 //if they are in the right order, just keep them that way
-                if (safe_area.inside(pnt_a.x, pnt_a.y)){
-                    //do nothing
-//                    cout<<"do nothing for "<<i<<" to "<<end_id<<endl;
-//                    cout<<"  start "<<list[i].x<<" , "<<list[i].y<<endl;
-//                    cout<<"  end "<<list[end_id].x<<" , "<<list[end_id].y<<endl;
-                }else{
+//                if (safe_area.inside(pnt_a.x, pnt_a.y)){
+//                    //do nothing
+////                    cout<<"do nothing for "<<i<<" to "<<end_id<<endl;
+////                    cout<<"  start "<<list[i].x<<" , "<<list[i].y<<endl;
+////                    cout<<"  end "<<list[end_id].x<<" , "<<list[end_id].y<<endl;
+//                }
+                
+                if (need_to_flip){
 //                    cout<<"flip for "<<i<<" to "<<end_id<<endl;
 //                    cout<<"  start "<<list[i].x<<" , "<<list[i].y<<endl;
 //                    cout<<"  end "<<list[end_id].x<<" , "<<list[end_id].y<<endl;

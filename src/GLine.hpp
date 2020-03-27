@@ -20,6 +20,9 @@ public:
     GLine get_offset(ofVec2f offset);
     void draw();
     
+    bool clip_to_other_line(ofVec2f other_a, ofVec2f other_b);
+    bool clip_to_other_line(float other_a_x, float other_a_y, float other_b_x, float other_b_y);
+    
     ofVec2f a, b;
     
 };
