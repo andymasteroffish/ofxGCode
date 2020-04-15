@@ -23,6 +23,7 @@ public:
     }
     
     inline GCodePoint() {
+        do_not_reverse = false;
     }
     
     void set_from_point(GCodePoint other){

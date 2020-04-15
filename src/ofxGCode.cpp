@@ -21,6 +21,8 @@ void ofxGCode::setup(float _pixels_per_inch){
     show_do_not_reverse = false;
     do_not_draw_dots = false;
     
+    last_translate_id = 0;
+    
     set_size(ofGetWidth(), ofGetHeight());
     
     debug_show_point_numbers = false;
@@ -250,6 +252,9 @@ void ofxGCode::set_speed(float val){
     speed = val;
 }
 
+void ofxGCode::rect(ofRectangle box){
+    rect(box.x, box.y, box.width, box.height);
+}
 void ofxGCode::rect(float x, float y, float w, float h){
     line(x,y, x+w, y, true);
     line(x+w,y, x+w, y+h, false);
@@ -398,7 +403,14 @@ void ofxGCode::text(string text, ofTrueTypeFont * font, float x, float y){
     ofPopMatrix();
 }
 
-
+void ofxGCode::translate(float x, float y){
+    for (int i=0; i<list.size(); i++){
+        list[i].x += x;
+        list[i].y += y;
+    }
+    
+    last_translate_id = list.size()-1;  //everything before this point has been mover at least once
+}
 
 //This function is by Andy, it attempts to recreate the functionality of modelX() and modelY() in Processing
 //Currently it only works in 2D. 3D transformations will break it.

@@ -33,6 +33,7 @@ public:
     void set_pressure(float val);       //currently not used
     void set_speed(float val);
     
+    void rect(ofRectangle box);
     void rect(float x, float y, float w, float h);
     
     void circle(float x, float y, float size);
@@ -53,6 +54,8 @@ public:
     void point(float x, float y, float speed, float pressure);
     
     void text(string text, ofTrueTypeFont * font, float x, float y);
+    
+    void translate(float x, float y);
     
     ofVec2f getModelPoint(ofVec3f pnt);
     ofVec2f getModelPoint(float x, float y);
@@ -99,6 +102,8 @@ public:
     int last_speed;
     
     vector<GCodePoint> list;
+    
+    int last_translate_id;
     
     bool debug_show_point_numbers;
     
