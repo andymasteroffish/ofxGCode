@@ -45,7 +45,11 @@ bool GLine::intersects(GLine other){
     }
     return false;
 }
-    
+
+bool GLine::clip_to_other_line(GLine other){
+    return clip_to_other_line(other.a.x, other.a.y, other.b.x, other.b.y);
+}
+
 bool GLine::clip_to_other_line(ofVec2f other_a, ofVec2f other_b){
     return clip_to_other_line(other_a.x, other_a.y, other_b.x, other_b.y);
 }
