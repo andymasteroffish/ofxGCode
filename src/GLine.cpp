@@ -6,6 +6,14 @@
 
 #include "GLine.hpp"
 
+GLine::GLine(){
+    a.x = 0;
+    a.y = 0;
+    b.x = 0;
+    b.y = 0;
+    skip_me = false;
+}
+
 void GLine::set(ofVec2f _a, ofVec2f _b){
     set(_a.x, _a.y, _b.x, _b.y);
 }
@@ -72,4 +80,81 @@ void GLine::swap_a_and_b(){
     ofVec2f temp = ofVec2f(a);
     a.set(b);
     b.set(temp);
+}
+
+//trims any part of the line not in the polygon
+//returns true if the line shoudl be removed entirely
+//THIS WILL FAIL IF A AND B ARE OUTSIDE THE POLYGON BUT PART OF THE LINE IS INSIDE
+//THIS WILL PARTIALLY FAIL IF THE LINE PASSES THROUGH THE POLYGON IN TWO POINTS
+bool GLine::clip_inside_polygon(vector<ofVec2f> pnts){
+    bool a_in, b_in;
+    
+    //if both points of this line are outside of the polygon, just remove it
+    a_in = checkInPolygon(pnts, a.x, a.y);
+    b_in = checkInPolygon(pnts, b.x, b.y);
+    
+    if (!a_in && !b_in){
+        skip_me = true;
+        return true;
+    }
+    
+    //make sure A is on the inside
+    if (b_in){
+        swap_a_and_b();
+    }
+    
+    //check if we are intersecting any of these lines
+    for (int i=0; i<pnts.size(); i++){
+        GLine other;
+        other.set(pnts[i], pnts[(i+1)%pnts.size()]);
+        clip_to_other_line(other);
+    }
+    
+    return false;
+}
+
+//trims any part of the line inside the polygon
+//returns true if the line shoudl be removed entirely
+//THIS WILL FAIL IF A AND B ARE OUTSIDE THE POLYGON BUT PART OF THE LINE IS INSIDE
+//THIS WILL PARTIALLY FAIL IF THE LINE PASSES THROUGH THE POLYGON IN TWO POINTS
+bool GLine::clip_outside_polygon(vector<ofVec2f> pnts){
+    bool a_in, b_in;
+    
+    //if both points of this line are outside of the polygon, just remove it
+    a_in = checkInPolygon(pnts, a.x, a.y);
+    b_in = checkInPolygon(pnts, b.x, b.y);
+    
+    if (a_in && b_in){
+        skip_me = true;
+        return true;
+    }
+    
+    //make sure A is on the outside
+    if (a_in){
+        swap_a_and_b();
+    }
+    
+    //check if we are intersecting any of these lines
+    for (int i=0; i<pnts.size(); i++){
+        GLine other;
+        other.set(pnts[i], pnts[(i+1)%pnts.size()]);
+        clip_to_other_line(other);
+    }
+    
+    return false;
+}
+
+
+
+
+bool GLine::checkInPolygon(vector<ofVec2f> p, float x, float y)
+{
+    int i, j, c = 0;
+    for (i = 0, j = p.size()-1; i < p.size(); j = i++) {
+        if ((((p[i].y <= y) && (y < p[j].y)) ||
+             ((p[j].y <= y) && (y < p[i].y))) &&
+            (x < (p[j].x - p[i].x) * (y - p[i].y) / (p[j].y - p[i].y) + p[i].x))
+            c = !c;
+    }
+    return c;
 }

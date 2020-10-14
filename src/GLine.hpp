@@ -14,6 +14,7 @@
 class GLine{
 public:
     
+    GLine();
     void set(ofVec2f _a, ofVec2f _b);
     void set(GLine other);
     void set(float x1, float y1, float x2, float y2);
@@ -27,7 +28,13 @@ public:
     
     void swap_a_and_b();
     
+    bool clip_inside_polygon(vector<ofVec2f> pnts);
+    bool clip_outside_polygon(vector<ofVec2f> pnts);
+    
+    bool checkInPolygon(vector<ofVec2f> p, float x, float y);
+    
     ofVec2f a, b;
+    bool skip_me;
     
 };
 

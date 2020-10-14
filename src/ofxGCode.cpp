@@ -17,7 +17,7 @@ void ofxGCode::setup(float _pixels_per_inch){
     pixels_per_inch = _pixels_per_inch;
     
     show_transit_lines = true;
-    show_path_with_color = true;
+    show_path_with_color = false;
     show_do_not_reverse = false;
     do_not_draw_dots = false;
     
@@ -306,6 +306,7 @@ void ofxGCode::end_shape(bool close){
 }
 
 void ofxGCode::line(GLine _line){
+    if (_line.skip_me)  return;
     line(_line.a.x,_line.a.y, _line.b.x,_line.b.y);
 }
 void ofxGCode::line(ofVec2f a, ofVec2f b, bool lift_pen){
