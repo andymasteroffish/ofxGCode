@@ -42,6 +42,20 @@ void GLine::draw(){
     ofDrawLine(a,b);
 }
 
+vector<GLine> GLine::get_segments(int num_segments){
+    vector<GLine> lines;
+    ofVec2f prev_pos = ofVec2f(a);
+    for (int i=1; i<=num_segments; i++){
+        float prc = (float)i/(float)num_segments;
+        ofVec2f pos = (1.0-prc)*a + prc*b;
+        GLine line;
+        line.set(prev_pos, pos );
+        lines.push_back(line);
+        prev_pos.set(pos);
+    }
+    return lines;
+}
+
 bool GLine::intersects(GLine other){
     ofPoint out;
     ofPoint my_a = a;

@@ -49,6 +49,8 @@ public:
     void line(float x1, float y1, float x2, float y2);
     void line(float x1, float y1, float x2, float y2, bool lift_pen);
     
+    void bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps = 50);
+    
     void dot(float x, float y);
     
     void point(float x, float y, float speed, float pressure);

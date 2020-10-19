@@ -342,6 +342,19 @@ void ofxGCode::line(float x1, float y1, float x2, float y2, bool lift_pen){
     point(p2.x, p2.y, speed, pressure);
 }
 
+void ofxGCode::bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps){
+    
+    begin_shape();
+    
+    for (int i=0; i<=steps; i++){
+        ofPoint pnt = ofBezierPoint(p1, c1, c2, p2, (float)i/(float)steps);
+        vertex(pnt);
+    }
+    
+    end_shape(false);
+    
+}
+
 void ofxGCode::dot(float x, float y){
     ofVec2f pnt = getModelPoint(x,y);
     
@@ -786,96 +799,6 @@ void ofxGCode::clip_inside(ofRectangle bounding_box){
     
     //this should really just be a helper for the polygon funciton
     clip_inside(bounds);
-    
-    
-//    //go through all points to see if they make up a line that passes through the bounds
-//    //this probably will not work with weird shapes that create more than 2 intersections
-//    for (int i=0; i<list.size()-1; i++){
-//        GCodePoint * pnt = &list[i];
-//        GCodePoint * next = &list[i+1];
-//
-//        //we only care if the pen is down
-//        if (next->pressure > 0){
-//            vector<ofPoint> intersects = find_intersections(*pnt, *next, bounds);
-//            if (intersects.size() >= 2){
-//
-//                //figure out which intersect is closer to eahc point
-//                ofPoint close_to_pnt = intersects[0];
-//                ofPoint close_to_next = intersects[0];
-//                float min_dist_to_pnt = ofDistSquared(close_to_pnt.x, close_to_pnt.y, pnt->x, pnt->y);
-//                float min_dist_to_next = ofDistSquared(close_to_pnt.x, close_to_pnt.y, next->x, next->y);
-//
-//                for (int k=1; k<intersects.size(); k++){
-//                    float dist_to_pnt = ofDistSquared(intersects[k].x, intersects[k].y, pnt->x, pnt->y);
-//                    float dist_to_next = ofDistSquared(intersects[k].x, intersects[k].y, next->x, next->y);
-//                    if (dist_to_pnt < min_dist_to_pnt){
-//                        close_to_pnt = intersects[k];
-//                        min_dist_to_pnt = dist_to_pnt;
-//                    }
-//                    if (dist_to_next < min_dist_to_next){
-//                        close_to_next = intersects[k];
-//                        min_dist_to_next = dist_to_next;
-//                    }
-//                }
-//
-//                //insert them as new points
-//                GCodePoint new_pnt = GCodePoint(close_to_pnt.x,close_to_pnt.y, next->speed, next->pressure);
-//                GCodePoint new_next = GCodePoint(close_to_next.x,close_to_next.y, next->speed, 0);
-//
-//                list.insert(list.begin()+i+1, new_next);
-//                list.insert(list.begin()+i+1, new_pnt);
-//            }
-//        }
-//    }
-//
-//    //go though all points to see if they make up a line partially inside the bounds
-//    for (int i=0; i<list.size(); i++){
-//        GCodePoint * pnt = &list[i];
-//        if (bounding_box.inside(pnt->x, pnt->y)){
-//
-//            //if pen was down to get here, we need to consider what came before
-//            bool preserve_point = false;
-//            if (pnt->pressure > 0 && i > 0){
-//                GCodePoint prev = list[i-1];
-//
-//                if (!bounding_box.inside(prev.x, prev.y)){
-//                    ofPoint intersect = find_intersection(*pnt, prev, bounds);
-//                    //move this point to the intersect
-//                    if (intersect.x != -1){
-//                        pnt->x = intersect.x;
-//                        pnt->y = intersect.y;
-//                        preserve_point = true;
-//                    }else{
-//                        //if we fucked up, just lift up the pen
-//                        pnt->pressure = 0;
-//                    }
-//                }
-//            }
-//
-//            //what comes next?
-//            if (i < list.size()-1){
-//                GCodePoint * next = &list[i+1];
-//                //if the next one is also inside, we can just kill this one
-//                //also if the next point is a pen-up move
-//                if (!preserve_point && (bounding_box.inside(next->x, next->y) || next->pressure ==0) ){
-//                    list.erase(list.begin()+i);
-//                    i--;
-//                }
-//                //if it is outside we should clip
-//                else if (!preserve_point && !bounding_box.inside(next->x, next->y)){
-//                    ofPoint intersect = find_intersection(*pnt, *next, bounds);
-//                    //move this point to the intersect
-//                    if (intersect.x != -1){
-//                        pnt->x = intersect.x;
-//                        pnt->y = intersect.y;
-//                    }
-//                }
-//                else{
-//                    next->pressure = 0;
-//                }
-//            }
-//        }
-//    }
     
 }
 

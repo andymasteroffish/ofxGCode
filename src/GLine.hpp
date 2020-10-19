@@ -21,6 +21,8 @@ public:
     GLine get_offset(ofVec2f offset);
     void draw();
     
+    vector<GLine> get_segments(int num_segments);
+    
     bool intersects(GLine other);
     bool clip_to_other_line(GLine other);
     bool clip_to_other_line(ofVec2f other_a, ofVec2f other_b);
