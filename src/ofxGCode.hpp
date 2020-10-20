@@ -49,6 +49,9 @@ public:
     void line(float x1, float y1, float x2, float y2);
     void line(float x1, float y1, float x2, float y2, bool lift_pen);
     
+    void thick_line(float x1, float y1, float x2, float y2, float spacing, int layers);
+    void thick_line(ofVec2f base_a, ofVec2f base_b, float spacing, int layers);
+    
     void bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps = 50);
     
     void dot(float x, float y);
@@ -67,6 +70,8 @@ public:
     //void remove_duplicate_points(float max_dist_to_count = 0);
     
     float measureTransitDistance();
+    
+    void clip_outside(ofRectangle bounding_box);
     
     void clip_inside(ofRectangle bounding_box);
     void clip_inside(vector<ofVec2f> bounds);

@@ -342,6 +342,32 @@ void ofxGCode::line(float x1, float y1, float x2, float y2, bool lift_pen){
     point(p2.x, p2.y, speed, pressure);
 }
 
+void ofxGCode::thick_line(float x1, float y1, float x2, float y2, float spacing, int layers){
+    thick_line(ofVec2f(x1,y1), ofVec2f(x2,y2), spacing, layers);
+}
+
+void ofxGCode::thick_line(ofVec2f base_a, ofVec2f base_b, float spacing, int layers){
+    //get the angle of the line
+    float angle = atan2(base_a.y-base_b.y, base_a.x-base_b.x);
+    float tan_angle = angle + PI/2;
+    
+    //draw it
+    float dist_offset = spacing * (layers-1) * 0.5;
+    
+    
+    for (int t=0; t<layers; t++){
+        float dist = t * spacing - dist_offset;
+        //cout<<"my dist "<<dist<<endl;
+        ofVec2f a = ofVec2f(base_a);
+        ofVec2f b = ofVec2f(base_b);
+        a.x += cos(tan_angle) * dist;
+        a.y += sin(tan_angle) * dist;
+        b.x += cos(tan_angle) * dist;
+        b.y += sin(tan_angle) * dist;
+        line(a,b);
+    }
+}
+
 void ofxGCode::bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps){
     
     begin_shape();
@@ -501,7 +527,7 @@ void ofxGCode::sort(){
     vector<GCodePoint> src(list);    //clones the vector
     
     //in my ofxVST port, these were called frames
-    GCodePoint lastFrame = GCodePoint(9999, 9999, 0, 0);
+    GCodePoint lastFrame = GCodePoint(0, 0, 0, 0);
     GCodePoint nearestFrame = lastFrame;
     
     while (src.size() != 0) {
@@ -784,6 +810,28 @@ float ofxGCode::measureTransitDistance(){
         last = f;
     }
     return distance;
+}
+
+
+//this is just a hack that uses clip_inside to make a bunch of boxes around the described box
+void ofxGCode::clip_outside(ofRectangle bounding_box){
+    
+    ofRectangle above;
+    above.set(0,0, fbo.getWidth(), bounding_box.y);
+    
+    ofRectangle below;
+    below.set(0,bounding_box.y+bounding_box.height, fbo.getWidth(), fbo.getHeight()-bounding_box.y-bounding_box.height+10);
+    
+    ofRectangle left;
+    left.set(0,0, bounding_box.x, fbo.getHeight());
+    
+    ofRectangle right;
+    right.set(bounding_box.x+bounding_box.width, 0, fbo.getWidth() - bounding_box.x-bounding_box.width+10, fbo.getHeight());
+    
+    clip_inside(above);
+    clip_inside(below);
+    clip_inside(left);
+    clip_inside(right);
 }
 
 //this would be more efficient if you used Trammel's clipping class
