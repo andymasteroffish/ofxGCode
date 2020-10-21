@@ -110,14 +110,15 @@ void ofxGCode::draw(int max_lines_to_show){
             }
             
             //won't be able to see dots if we're drawing lines
-            bool is_dot = prev_x == pnt.x && prev_y == pnt.y && pnt.pressure > 0;
+            //THIS IS NOT REALLY Working right now
+            bool is_dot = false;// prev_x == pnt.x && prev_y == pnt.y && pnt.pressure > 0;
             
             if (do_not_draw_dots)   is_dot = false;
             
             if (!is_dot){
                 ofDrawLine(prev_x, prev_y, pnt.x, pnt.y);
             }else{
-                ofDrawCircle(pnt.x, pnt.y, 1);
+                ofDrawCircle(pnt.x, pnt.y, 2);
             }
             
             //testing
