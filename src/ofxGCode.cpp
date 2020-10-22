@@ -33,18 +33,10 @@ void ofxGCode::setup(float _pixels_per_inch){
 void ofxGCode::set_size(int w, int h){
     clip.setup(ofVec2f(0, 0), ofVec2f(w,h));
     
-    fbo.allocate(w,h, GL_RGBA);
-    
     clear();
 }
 
 void ofxGCode::clear(){
-    fbo.begin();
-    ofClear(255,255,255);
-    ofSetColor(255);
-    ofFill();
-    ofDrawRectangle(0, 0, fbo.getWidth(), fbo.getHeight());
-    fbo.end();
     
     list.clear();
     
@@ -57,9 +49,6 @@ void ofxGCode::clear(){
 }
 
 void ofxGCode::draw(int max_lines_to_show){
-    //ofSetColor(255);
-    //fbo.draw(0,0);
-    
     int draw_count = 0;
     
     if (list.size() > 1){
@@ -327,14 +316,6 @@ void ofxGCode::line(float x1, float y1, float x2, float y2, bool lift_pen){
         return;
     }
     
-    fbo.begin();
-    
-    float speed_prc = ofMap(speed, 1000, max_speed, 1, 0);  //setting an arbitrary min
-    speed_prc = powf(speed_prc, 0.5);                       //smoothing this out since a medium speed still looks pretty black
-    ofSetColor(0, speed_prc * 255);
-    ofDrawLine(p1.x, p1.y, p2.x, p2.y);
-    fbo.end();
-    
     if (lift_pen){
         point(p1.x, p1.y, speed, 0);
     }else{
@@ -388,11 +369,6 @@ void ofxGCode::dot(float x, float y){
     if (clip.check_point(pnt) == false){
         return;
     }
-    
-    fbo.begin();
-    ofSetColor(0);
-    ofDrawCircle(pnt.x, pnt.y, 1);
-    fbo.end();
     
     //transit line
     point(x, y, speed, 0);
@@ -818,16 +794,16 @@ float ofxGCode::measureTransitDistance(){
 void ofxGCode::clip_outside(ofRectangle bounding_box){
     
     ofRectangle above;
-    above.set(0,0, fbo.getWidth(), bounding_box.y);
+    above.set(0,0, clip.max.x, bounding_box.y);
     
     ofRectangle below;
-    below.set(0,bounding_box.y+bounding_box.height, fbo.getWidth(), fbo.getHeight()-bounding_box.y-bounding_box.height+10);
+    below.set(0,bounding_box.y+bounding_box.height, clip.max.x, clip.max.y-bounding_box.y-bounding_box.height+10);
     
     ofRectangle left;
-    left.set(0,0, bounding_box.x, fbo.getHeight());
+    left.set(0,0, bounding_box.x, clip.max.y);
     
     ofRectangle right;
-    right.set(bounding_box.x+bounding_box.width, 0, fbo.getWidth() - bounding_box.x-bounding_box.width+10, fbo.getHeight());
+    right.set(bounding_box.x+bounding_box.width, 0, clip.max.x - bounding_box.x-bounding_box.width+10, clip.max.y);
     
     clip_inside(above);
     clip_inside(below);

@@ -99,7 +99,7 @@ public:
     vector<ofVec2f> shape_pnts;
     
     vector<string> commands;
-    ofFbo fbo;
+    //ofFbo fbo;
     
     Clipping clip;
     
