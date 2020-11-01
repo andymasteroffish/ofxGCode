@@ -8,9 +8,6 @@
 
 void ofxGCode::setup(float _pixels_per_inch){
     //set some defaults
-    max_speed = 10000;
-    speed = 5000;
-    pressure = 60;
     circle_resolution = 50;
     
     //inches for axidraw
@@ -39,11 +36,10 @@ void ofxGCode::set_size(int w, int h){
 void ofxGCode::clear(){
     
     list.clear();
+    lines.clear();
     
     last_x = -9999;
     last_y = -9999;
-    last_speed = -9999;
-    last_pressure = -9999;
     
     commands.clear();
 }
@@ -51,6 +47,47 @@ void ofxGCode::clear(){
 void ofxGCode::draw(int max_lines_to_show){
     int draw_count = 0;
     
+    int end_index = MIN(max_lines_to_show, lines.size());
+    for (int i=0; i<end_index; i++){
+        //the line
+        GLine line = lines[i];
+        
+        ofSetColor(demo_col.r, demo_col.g, demo_col.b, 255 * 0.75);
+        
+        //fading between colors to show order
+        if (show_path_with_color){
+            float prc = (float)i/(float)list.size();
+            ofSetColor(0, 255.0*(1.0-prc), 255*prc);
+        }
+        
+        if (show_do_not_reverse && line.do_not_reverse){
+            ofSetColor(255, 38, 226);
+            if (list[i-1].pressure == 0){
+                //throw wings on it
+                float prc = 0.9;
+                ofVec2f wing_pnt;
+                wing_pnt.x = (1.0-prc)*line.a.x + prc*line.b.x;
+                wing_pnt.y = (1.0-prc)*line.a.y + prc*line.b.y;
+                //ofDrawCircle(wing_pnt.x, wing_pnt.y, 2);
+                float angle = atan2(line.a.y-line.b.y, line.a.x-line.b.x);
+                float dist = 7;
+                float spread = PI/8;
+                ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle+spread)*dist, wing_pnt.y+sin(angle+spread)*dist);
+                ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle-spread)*dist, wing_pnt.y+sin(angle-spread)*dist);
+            }
+        }
+        
+        line.draw();
+    
+        
+        //the transit to the next line
+        if (i < end_index-1 && show_transit_lines){
+            ofSetColor(255, 0,0, 60);
+            ofDrawLine(line.b.x, line.b.y, lines[i+1].a.x, lines[i+1].a.y);
+        }
+    }
+    
+    /*
     if (list.size() > 1){
         float prev_x = list[0].x;
         float prev_y = list[0].y;
@@ -127,6 +164,7 @@ void ofxGCode::draw(int max_lines_to_show){
             prev_pressure = pnt.pressure;
         }
     }
+     */
 }
 
 void ofxGCode::generate_gcode(){
@@ -135,6 +173,7 @@ void ofxGCode::generate_gcode(){
     commands.push_back("M3 S0");
     commands.push_back("G0 X0 Y0");
     
+    /*
     ofVec2f prev_pnt = ofVec2f(0,0);
     float prev_speed = max_speed;
     float prev_pressure = 0;
@@ -191,6 +230,7 @@ void ofxGCode::generate_gcode(){
             prev_pressure = pnt.pressure;
         }
     }
+     */
     
     //add some closing steps
     commands.push_back("M3 S0");
@@ -227,20 +267,6 @@ void ofxGCode::save(string name){
     cout<<"SAVED"<<endl;
 }
 
-void ofxGCode::set_pressure(float val){
-    if (val < 0 || val > 100){
-        cout<<"speed shuld be between 0 and 100"<<endl;
-        return;
-    }
-    pressure = val;
-}
-void ofxGCode::set_speed(float val){
-    if (val < 1 || val > max_speed){
-        cout<<"speed should be between 1 and "<<max_speed<<endl;
-        return;
-    }
-    speed = val;
-}
 
 void ofxGCode::rect(ofRectangle box){
     rect(box.x, box.y, box.width, box.height);
@@ -268,10 +294,6 @@ void ofxGCode::circle(float x, float y, float size){
 
 void ofxGCode::begin_shape(){
     shape_pnts.clear();
-}
-void ofxGCode::start_shape(){
-    cout<<"HEY DON'T USE THIS. start_shape IS A BAD NAME AND I SHOULD REMOVE IT. USE begin_shape"<<endl;
-    begin_shape();
 }
 void ofxGCode::vertex(ofVec2f p){
     shape_pnts.push_back(p);
@@ -318,17 +340,29 @@ void ofxGCode::line(float x1, float y1, float x2, float y2, bool lift_pen){
     ofVec2f p1 = getModelPoint(x1,y1);
     ofVec2f p2 = getModelPoint(x2,y2);
     
+    //clip the points to fit our canvas, rejecting the line if it would be entirely out of bounds
     if (!clip.clip(p1, p2)) {
-        //cout<<"no part of this line is on screen"<<endl;
+        cout<<"no part of this line is on screen"<<endl;
         return;
     }
+
     
-    if (lift_pen){
-        point(p1.x, p1.y, speed, 0);
-    }else{
-        point(p1.x, p1.y, speed, pressure);
-    }
-    point(p2.x, p2.y, speed, pressure);
+    GLine line;
+    line.set(p1, p2);
+    lines.push_back(line);
+    
+    //KILL ME
+//    if (!clip.clip(p1, p2)) {
+//        //cout<<"no part of this line is on screen"<<endl;
+//        return;
+//    }
+//
+//    if (lift_pen){
+//        point(p1.x, p1.y, speed, 0);
+//    }else{
+//        point(p1.x, p1.y, speed, pressure);
+//    }
+//    point(p2.x, p2.y, speed, pressure);
 }
 
 void ofxGCode::thick_line(float x1, float y1, float x2, float y2, float spacing, int layers){
@@ -371,6 +405,9 @@ void ofxGCode::bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps)
 }
 
 void ofxGCode::dot(float x, float y){
+    //MAKE THIS WORK
+    
+    /*
     ofVec2f pnt = getModelPoint(x,y);
     
     if (clip.check_point(pnt) == false){
@@ -381,25 +418,24 @@ void ofxGCode::dot(float x, float y){
     point(x, y, speed, 0);
     //drop the pen
     point(x, y, speed, pressure);
+     */
     
 }
 
-void ofxGCode::point(float x, float y, float speed, float pressure){
-    
-    if (x == last_x && y == last_y && last_speed == speed && last_pressure == pressure ) {
-        //cout<<"same point as last. ignored. "<<x<<","<<y<<endl;
-        return;
-    }
-    last_x = x;
-    last_y = y;
-    last_speed = speed;
-    last_pressure = pressure;
-    
-    //cout<<"adding at "<<x<<","<<y<<endl;
-    
-    GCodePoint pnt = GCodePoint(x,y,speed,pressure);
-    list.push_back(pnt);
-}
+//void ofxGCode::point(float x, float y, float speed, float pressure){
+//    
+//    if (x == last_x && y == last_y  ) {
+//        //cout<<"same point as last. ignored. "<<x<<","<<y<<endl;
+//        return;
+//    }
+//    last_x = x;
+//    last_y = y;
+//    
+//    //cout<<"adding at "<<x<<","<<y<<endl;
+//    
+//    GCodePoint pnt = GCodePoint(x,y,speed,pressure);
+//    list.push_back(pnt);
+//}
 
 //https://openframeworks.cc/documentation/graphics/ofTrueTypeFont/#show_getStringAsPoints
 void ofxGCode::text(string text, ofTrueTypeFont * font, float x, float y){
@@ -786,13 +822,13 @@ void ofxGCode::simplify(float max_dist_to_combine_points){
 
 float ofxGCode::measureTransitDistance(){
     float distance = 0.0;
-    GCodePoint last = GCodePoint(0, 0, 0, 0);
-    for (GCodePoint f : list) {
-        if (f.pressure == 0){
-            distance += ofDist(f.x, f.y, last.x, last.y);
-        }
-        last = f;
-    }
+//    GCodePoint last = GCodePoint(0, 0, 0, 0);
+//    for (GCodePoint f : list) {
+//        if (f.pressure == 0){
+//            distance += ofDist(f.x, f.y, last.x, last.y);
+//        }
+//        last = f;
+//    }
     return distance;
 }
 
@@ -994,8 +1030,9 @@ vector<ofPoint> ofxGCode::find_intersections(GCodePoint a, GCodePoint b, vector<
 }
 
 //--------------------------------------------------------------
-//any lines outside of this boun will be forced to draw from the center out.
+//any lines outside of this bounfs will be forced to draw from the center out.
 void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
+    /*
     //cout<<"---set outwards---"<<endl;
     if (list.size() < 2){
         return;
@@ -1092,53 +1129,7 @@ void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
             }
         }
     }
-    
-    
-    /*
-    for (int i=0; i<list.size()-1; i++){
-        GCodePoint * pnt_a = &list[i];
-        GCodePoint * pnt_b = &list[i+1];
-        
-        bool next_segment_is_good = true;
-        if (i<list.size()-2){
-            next_segment_is_good = list[i+2].pressure == 0;
-        }
-        
-        //this only works on lines, so we need to identify when we're looking at a single line segment
-        if (pnt_a->pressure == 0 && pnt_b->pressure > 0 && next_segment_is_good){
-            //cout<<"line from "<<pnt_a->x<<","<<pnt_a->y<<"  to "<<pnt_b->x<<","<<pnt_a->y<<endl;
-            
-            //is at least one point outside?
-            if (!safe_area.inside(pnt_a->x, pnt_a->y) || !safe_area.inside(pnt_b->x, pnt_b->y)){
-                //cout<<"  a point is outside"<<endl;
-                
-                //if they are in the right order, just keep them that way
-                if (ofDistSquared(center.x, center.y, pnt_a->x, pnt_a->y) < ofDistSquared(center.x, center.y, pnt_b->x, pnt_b->y)){
-                   // cout<<"  we are in the right direction"<<endl;
-                    //do nothing
-                }else{
-                    //cout<<"  we need to flip"<<endl;
-                    float a_x = pnt_a->x;
-                    float a_y = pnt_a->y;
-                   
-                    pnt_a->x = pnt_b->x;
-                    pnt_a->y = pnt_b->y;
-                    pnt_b->x = a_x;
-                    pnt_b->y = a_y;
-                    
-
-                    
-                }
-                
-                //either way, thise line is not allowed to be reversed in sort()
-                pnt_a->do_not_reverse = true;
-                pnt_b->do_not_reverse = true;
-                
-            }
-            
-        }
-    }
-     */
+    */
 }
 
 //--------------------------------------------------------------

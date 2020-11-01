@@ -26,12 +26,8 @@ public:
     void draw(int max_lines_to_show = -1);
     
     void generate_gcode();
-    //ofVec2f screen_point_to_plotter(float x, float y);
     void print();
     void save(string name);
-    
-    void set_pressure(float val);       //currently not used
-    void set_speed(float val);
     
     void rect(ofRectangle box);
     void rect(float x, float y, float w, float h);
@@ -39,7 +35,6 @@ public:
     void circle(float x, float y, float size);
     
     void begin_shape();
-    void start_shape();
     void vertex(ofVec2f p);
     void vertex(float x, float y);
     void end_shape(bool close);
@@ -58,7 +53,7 @@ public:
     
     void dot(float x, float y);
     
-    void point(float x, float y, float speed, float pressure);
+    //void point(float x, float y, float speed, float pressure);
     
     void text(string text, ofTrueTypeFont * font, float x, float y);
     
@@ -89,26 +84,19 @@ public:
     
     
     
-    //float plotter_x_limit, plotter_y_limit;
     float pixels_per_inch;    //converison unit
-    
-    float speed;
-    float max_speed;
-    float pressure; //maybe getting rid of this
     
     int circle_resolution;
     
     vector<ofVec2f> shape_pnts;
     
+    vector<GLine> lines;
     vector<string> commands;
-    //ofFbo fbo;
     
     Clipping clip;
     
     int last_x; //TODO: make these floats and check if values are very, very close
     int last_y;
-    int last_pressure;
-    int last_speed;
     
     vector<GCodePoint> list;
     

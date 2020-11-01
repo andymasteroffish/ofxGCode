@@ -39,6 +39,7 @@ public:
     
     ofVec2f a, b;
     bool skip_me;
+    bool do_not_reverse;
     
 };
 
