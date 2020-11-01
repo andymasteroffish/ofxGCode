@@ -6,6 +6,8 @@ ofxGCode Updates
 	[] make sure you can sort
 	[] test dots
 [] standardize the language around “clip inside”
+[] add hershey font
+[] size independent from window size
 
 Stretch:
 [] be able to tag lines so you can specify which ones to be removed in a culling

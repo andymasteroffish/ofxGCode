@@ -16,7 +16,7 @@ void ofxGCode::setup(float _pixels_per_inch){
     //inches for axidraw
     pixels_per_inch = _pixels_per_inch;
     
-    show_transit_lines = true;
+    show_transit_lines = false;
     show_path_with_color = false;
     show_do_not_reverse = false;
     do_not_draw_dots = false;
@@ -295,6 +295,13 @@ void ofxGCode::end_shape(bool close){
     }
 }
 
+void ofxGCode::polygon(vector<ofVec2f> pnts){
+    begin_shape();
+    for (int i=0; i<pnts.size(); i++){
+        vertex(pnts[i]);
+    }
+    end_shape(true);
+}
 void ofxGCode::line(GLine _line){
     if (_line.skip_me)  return;
     line(_line.a.x,_line.a.y, _line.b.x,_line.b.y);

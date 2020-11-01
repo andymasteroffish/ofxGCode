@@ -14,6 +14,10 @@ GLine::GLine(){
     skip_me = false;
 }
 
+GLine::GLine(ofVec2f _a, ofVec2f _b){
+    set(_a, _b);
+}
+
 void GLine::set(ofVec2f _a, ofVec2f _b){
     set(_a.x, _a.y, _b.x, _b.y);
 }
@@ -94,6 +98,16 @@ void GLine::swap_a_and_b(){
     ofVec2f temp = ofVec2f(a);
     a.set(b);
     b.set(temp);
+}
+
+
+bool GLine::clip_inside_rect(ofRectangle rect){
+    vector<ofVec2f> pnts;
+    pnts.push_back( ofVec2f(rect.x,rect.y));
+    pnts.push_back( ofVec2f(rect.x+rect.width,rect.y));
+    pnts.push_back( ofVec2f(rect.x+rect.width,rect.y+rect.height));
+    pnts.push_back( ofVec2f(rect.x,rect.y+rect.height));
+    clip_inside_polygon(pnts);
 }
 
 //trims any part of the line not in the polygon
