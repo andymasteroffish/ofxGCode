@@ -3,7 +3,6 @@ ofxGCode Updates
 [X] remove fbo
 [] have everything represented by GLine
 [] standardize the language around “clip inside”
-[] add hershey font
 [] size independent from window size
 
 Stretch:
@@ -38,5 +37,14 @@ GLine Overhaul
 	[] and show_do_not_reverse
 [X] do you need last_translate_id? (I don’t think so)
 [] test show_path_with_color
+[] static trim inside function that takes a vector of Glines and returns fixed vector
+	[] GLine trim function should take an optional vector pointer and put new liens there if it needs to split them up
+	- find all intersection points and run along the line breaking it up
+
+
+New features
+[] rounded rect function
+	[] option to export points
+[] add hershey font
 	
 
