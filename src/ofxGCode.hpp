@@ -25,8 +25,7 @@ public:
     
     void draw(int max_lines_to_show = -1);
     
-    void generate_gcode();
-    void print();
+    //void generate_gcode();
     void save(string name);
     
     void rect(ofRectangle box);
@@ -57,7 +56,7 @@ public:
     
     void text(string text, ofTrueTypeFont * font, float x, float y);
     
-    void translate(float x, float y);
+    //void translate(float x, float y);
     
     ofVec2f getModelPoint(ofVec3f pnt);
     ofVec2f getModelPoint(float x, float y);
@@ -75,6 +74,8 @@ public:
     ofPoint find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
     vector<ofPoint> find_intersections(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
     
+    bool are_points_the_same(ofVec2f a, ofVec2f b);
+    
     //any lines outside of this bound will be forced to draw from the center out. 
     void set_outwards_only_bounds(ofRectangle safe_area);
     
@@ -88,19 +89,18 @@ public:
     
     int circle_resolution;
     
-    vector<ofVec2f> shape_pnts;
+    float max_dist_to_consider_pnts_touching;
+    
+    vector<ofVec2f> shape_pnts; //used for begin_shape / end_shape
     
     vector<GLine> lines;
-    vector<string> commands;
     
     Clipping clip;
     
-    int last_x; //TODO: make these floats and check if values are very, very close
-    int last_y;
     
-    vector<GCodePoint> list;
+    //vector<GCodePoint> list;
     
-    int last_translate_id;
+    //int last_translate_id;
     
     bool debug_show_point_numbers;
     

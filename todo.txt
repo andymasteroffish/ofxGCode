@@ -8,24 +8,35 @@ ofxGCode Updates
 
 Stretch:
 [] be able to tag lines so you can specify which ones to be removed in a culling
+[] ofVe2f.isAligned could be helpful for recombining polylines
 
 
 GLine Overhaul
-[] do things like last_x do antyhing?
-[] remove GCodePoint
-[] remove pressure and speed
-[] test dots
+[X] do things like last_x do anything? - No
+[] remove GCodePoint class
+[X] remove vector<GCodePoint> list
+[X] remove pressure and speed
+[] make sure you can still draw dots
 [] make sure sorting works
-[] do you need to store vector<string> commands or just generate in the make gcode function?
+[X] do you need to store vector<string> commands or just generate in the make gcode function?
 [] work on simplify() or remove it
-[] draw transit lines
+	-I think you can just get rid of it TBH
+[X] draw transit lines
 [] clean up and remove commented out old code
 [] measureTransitDistance()
 [] clip_inside()
-	-needs to handle lines that pass through
+	[] needs to handle lines that pass through
+	[] the version that just takes a rect could use trammel’s clipping class
 [] set_outwards_only_bounds()
+[] variable for the M3 command (how far you drop the pen, currently 60)
+[] Can you use equals on the ofVec2fs or do you need a very small distance that you consider as the same?
+	-this is for figuring out if pen goes up
+	-drawing transit lines should use the same logic
+	[] get rid of are_points_the_same() and max_dist_to_consider_pnts_touching if not using
+[X] make sure clipping plans still works and that you cannot go out of range
+[] make sure do not reverse works
+	[] and show_do_not_reverse
+[X] do you need last_translate_id? (I don’t think so)
+[] test show_path_with_color
+	
 
-
-Things to preserve:
-[] do not reverse (should be in gline)
-[] clipping to ensure you do not go out of range

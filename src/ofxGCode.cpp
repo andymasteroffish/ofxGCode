@@ -18,7 +18,9 @@ void ofxGCode::setup(float _pixels_per_inch){
     show_do_not_reverse = false;
     do_not_draw_dots = false;
     
-    last_translate_id = 0;
+    //last_translate_id = 0;
+    
+    max_dist_to_consider_pnts_touching = 0.001;
     
     set_size(ofGetWidth(), ofGetHeight());
     
@@ -34,14 +36,7 @@ void ofxGCode::set_size(int w, int h){
 }
 
 void ofxGCode::clear(){
-    
-    list.clear();
     lines.clear();
-    
-    last_x = -9999;
-    last_y = -9999;
-    
-    commands.clear();
 }
 
 void ofxGCode::draw(int max_lines_to_show){
@@ -56,25 +51,23 @@ void ofxGCode::draw(int max_lines_to_show){
         
         //fading between colors to show order
         if (show_path_with_color){
-            float prc = (float)i/(float)list.size();
+            float prc = (float)i/(float)lines.size();
             ofSetColor(0, 255.0*(1.0-prc), 255*prc);
         }
         
         if (show_do_not_reverse && line.do_not_reverse){
             ofSetColor(255, 38, 226);
-            if (list[i-1].pressure == 0){
-                //throw wings on it
-                float prc = 0.9;
-                ofVec2f wing_pnt;
-                wing_pnt.x = (1.0-prc)*line.a.x + prc*line.b.x;
-                wing_pnt.y = (1.0-prc)*line.a.y + prc*line.b.y;
-                //ofDrawCircle(wing_pnt.x, wing_pnt.y, 2);
-                float angle = atan2(line.a.y-line.b.y, line.a.x-line.b.x);
-                float dist = 7;
-                float spread = PI/8;
-                ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle+spread)*dist, wing_pnt.y+sin(angle+spread)*dist);
-                ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle-spread)*dist, wing_pnt.y+sin(angle-spread)*dist);
-            }
+            //throw wings on it
+            float prc = 0.9;
+            ofVec2f wing_pnt;
+            wing_pnt.x = (1.0-prc)*line.a.x + prc*line.b.x;
+            wing_pnt.y = (1.0-prc)*line.a.y + prc*line.b.y;
+            //ofDrawCircle(wing_pnt.x, wing_pnt.y, 2);
+            float angle = atan2(line.a.y-line.b.y, line.a.x-line.b.x);
+            float dist = 7;
+            float spread = PI/8;
+            ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle+spread)*dist, wing_pnt.y+sin(angle+spread)*dist);
+            ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle-spread)*dist, wing_pnt.y+sin(angle-spread)*dist);
         }
         
         line.draw();
@@ -82,8 +75,15 @@ void ofxGCode::draw(int max_lines_to_show){
         
         //the transit to the next line
         if (i < end_index-1 && show_transit_lines){
-            ofSetColor(255, 0,0, 60);
-            ofDrawLine(line.b.x, line.b.y, lines[i+1].a.x, lines[i+1].a.y);
+            ofVec2f transit_start = line.b;
+            ofVec2f transit_end = lines[i+1].a;
+            if (transit_start != transit_end){
+                ofSetColor(255, 0,0, 60);
+                ofDrawLine(transit_start, transit_end);
+            }
+//            else{
+//                cout<<"skip transit at "<<transit_start<<endl;
+//            }
         }
     }
     
@@ -167,95 +167,48 @@ void ofxGCode::draw(int max_lines_to_show){
      */
 }
 
-void ofxGCode::generate_gcode(){
+
+void ofxGCode::save(string name){
+    float inches_per_pixel = 1.0 / pixels_per_inch;
+    
+    vector<string> commands;
     commands.clear();
     
+    //pen up and positioned at the origin
     commands.push_back("M3 S0");
     commands.push_back("G0 X0 Y0");
     
-    /*
-    ofVec2f prev_pnt = ofVec2f(0,0);
-    float prev_speed = max_speed;
-    float prev_pressure = 0;
+    ofVec2f last_pos = ofVec2f(0,0);
     
-    float inches_per_pixel = 1.0 / pixels_per_inch;
-    cout<<"inches per pixel "<<inches_per_pixel<<endl;
-    
-    for (int i=0; i<list.size(); i++){
-        GCodePoint pnt = list[i];
-        //ofVec2f plotter_pos = screen_point_to_plotter(list[i].x,list[i].y);
-        ofVec2f plotter_pos = ofVec2f(list[i].x * inches_per_pixel, list[i].y * inches_per_pixel);
+    for(int i=0; i<lines.size(); i++){
+        GLine line = lines[i];
+        ofVec2f pos_a = ofVec2f(line.a.x * inches_per_pixel, line.a.y * inches_per_pixel);
+        ofVec2f pos_b = ofVec2f(line.b.x * inches_per_pixel, line.b.y * inches_per_pixel);
         
-        
-        string move_command = "";
-        //if pen is up, go as fast as possible
-        if (pnt.pressure == 0){
-            move_command = "G0 X"+ofToString(plotter_pos.x)+" Y"+ofToString(plotter_pos.y) ;
+        //if we are not at the start point, pen up and move there and pen down
+        if ( pos_a != last_pos){
+            commands.push_back("M3 S0");
+            commands.push_back("G0 X"+ofToString(pos_a.x)+" Y"+ofToString(pos_a.y));
+            commands.push_back("M3 S60");
         }
-        //otherwise move at the specified speed
         else{
-            //move_command = "G1 F"+ofToString(pnt.speed)+"\n";   //not sure that this is working
-            move_command += "G1 X"+ofToString(plotter_pos.x)+" Y"+ofToString(plotter_pos.y);
+            cout<<"do not life pen at "<<line.a<<endl;
         }
         
-        //make sure that we're not just lifting the pen up and putting it back down
-        bool skip = false;
-        if (commands.size() > 2){
-            if (pnt.pressure < 1){
-                //cout<<"check "<<move_command.substr(2)<<" VS "<<commands[commands.size()-1].substr(2)<<endl;
-                if(move_command.substr(2) == commands[commands.size()-1].substr(2)){
-                    skip = true;
-                    //cout<<"fuck this skip "<<move_command<<endl;
-                }
-            }
-        }
+        //move to the end point
+        commands.push_back("G1 X"+ofToString(pos_b.x)+" Y"+ofToString(pos_b.y));
         
-        if (!skip){
-            //write the pressure command first
-            if (pnt.pressure != prev_pressure){
-                commands.push_back("M3 S"+ofToString(pnt.pressure));
-            }
-            
-            //just make sure that this is not identical to the last one
-            if (move_command != commands[commands.size()-1]){
-                commands.push_back(move_command);
-            }else{
-                //cout<<"duplicate: "<<move_command<<endl;
-            }
-            
-            
-            
-            prev_pnt.set(plotter_pos);
-            prev_speed = pnt.speed;
-            prev_pressure = pnt.pressure;
-        }
+        //store it
+        last_pos = ofVec2f (pos_b);
     }
-     */
     
     //add some closing steps
     commands.push_back("M3 S0");
     commands.push_back("G0 X0 Y0");
     
     cout<<"transit distance: "<<measureTransitDistance()<<endl;
-}
-
-//ofVec2f ofxGCode::screen_point_to_plotter(float x, float y){
-//    ofVec2f val(0,0);
-//    val.x = ofMap(x,0,ofGetWidth(), -plotter_x_limit, plotter_x_limit);
-//    val.y = ofMap(y,0,ofGetWidth(), plotter_y_limit, -plotter_y_limit);
-//    return val;
-//}
-
-void ofxGCode::print(){
-    for (int i=0; i<commands.size(); i++){
-        cout<<commands[i]<<endl;
-    }
-}
-
-
-
-void ofxGCode::save(string name){
-    generate_gcode();
+    
+    //write it to file
     
     cout<<"saving "<<commands.size()<<" commands"<<endl;
     ofFile myTextFile;
@@ -292,6 +245,7 @@ void ofxGCode::circle(float x, float y, float size){
     end_shape(true);
 }
 
+//Emulating the begin/end shape functionality
 void ofxGCode::begin_shape(){
     shape_pnts.clear();
 }
@@ -301,9 +255,6 @@ void ofxGCode::vertex(ofVec2f p){
 void ofxGCode::vertex(float x, float y){
     shape_pnts.push_back(ofVec2f(x,y));
 }
-
-// TODO: make this just add points instead of using line
-// right now every point is added twice because you make a bunch of lines
 void ofxGCode::end_shape(bool close){
     if (shape_pnts.size() < 2){
         //cout<<"not enough points to make a shape"<<endl;
@@ -317,6 +268,7 @@ void ofxGCode::end_shape(bool close){
     }
 }
 
+//drawing polygone from points
 void ofxGCode::polygon(vector<ofVec2f> pnts){
     begin_shape();
     for (int i=0; i<pnts.size(); i++){
@@ -324,6 +276,8 @@ void ofxGCode::polygon(vector<ofVec2f> pnts){
     }
     end_shape(true);
 }
+
+//Lines
 void ofxGCode::line(GLine _line){
     if (_line.skip_me)  return;
     line(_line.a.x,_line.a.y, _line.b.x,_line.b.y);
@@ -365,6 +319,7 @@ void ofxGCode::line(float x1, float y1, float x2, float y2, bool lift_pen){
 //    point(p2.x, p2.y, speed, pressure);
 }
 
+//Thick lines are just multiple lines, eenly spaced
 void ofxGCode::thick_line(float x1, float y1, float x2, float y2, float spacing, int layers){
     thick_line(ofVec2f(x1,y1), ofVec2f(x2,y2), spacing, layers);
 }
@@ -391,6 +346,7 @@ void ofxGCode::thick_line(ofVec2f base_a, ofVec2f base_b, float spacing, int lay
     }
 }
 
+//Bezier Curves
 void ofxGCode::bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps){
     
     begin_shape();
@@ -463,14 +419,14 @@ void ofxGCode::text(string text, ofTrueTypeFont * font, float x, float y){
     ofPopMatrix();
 }
 
-void ofxGCode::translate(float x, float y){
-    for (int i=0; i<list.size(); i++){
-        list[i].x += x;
-        list[i].y += y;
-    }
-    
-    last_translate_id = list.size()-1;  //everything before this point has been mover at least once
-}
+//void ofxGCode::translate(float x, float y){
+//    for (int i=0; i<list.size(); i++){
+//        list[i].x += x;
+//        list[i].y += y;
+//    }
+//
+//    last_translate_id = list.size()-1;  //everything before this point has been moved at least once
+//}
 
 //This function is by Andy, it attempts to recreate the functionality of modelX() and modelY() in Processing
 //Currently it only works in 2D. 3D transformations will break it.
@@ -541,6 +497,7 @@ ofVec2f ofxGCode::getModelPoint(float x, float y){
 
 //this is not perfect yet. Some of the resulting order is deifnitely not as efficient as it could be
 void ofxGCode::sort(){
+    /*
     //cout<<"---sorting---"<<endl;
     vector<GCodePoint> destination;
     destination.clear();
@@ -636,6 +593,7 @@ void ofxGCode::sort(){
     for (int i=0; i<destination.size(); i++){
         list.push_back(destination[i]);
     }
+     */
 }
 
 //void ofxEleksDrawremove_duplicate_points(float max_dist_to_count = 0){
@@ -643,8 +601,8 @@ void ofxGCode::sort(){
 //}
 
 //trying to go thorugh and find lines that secretly connect
-//TODO: have it consider speed
 void ofxGCode::simplify(float max_dist_to_combine_points){
+    /*
     float max_dist_sq = powf(max_dist_to_combine_points, 2);
     int test_count = 0;
 //    cout<<"--start list--"<<endl;
@@ -818,6 +776,7 @@ void ofxGCode::simplify(float max_dist_to_combine_points){
     }
     
     cout<<"lines simplified: "<<test_count<<endl;
+    */
 }
 
 float ofxGCode::measureTransitDistance(){
@@ -871,6 +830,7 @@ void ofxGCode::clip_inside(ofRectangle bounding_box){
 }
 
 void ofxGCode::clip_inside(vector<ofVec2f> bounds){
+    /*
     if (list.size() < 2){
         return;
     }
@@ -990,6 +950,7 @@ void ofxGCode::clip_inside(vector<ofVec2f> bounds){
             }
         }
     }
+     */
 }
 
 ofPoint ofxGCode::find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds){
@@ -1027,6 +988,13 @@ vector<ofPoint> ofxGCode::find_intersections(GCodePoint a, GCodePoint b, vector<
     }
     
     return vals;
+}
+
+//--------------------------------------------------------------
+//returns true if points are close enough to consider identical
+bool ofxGCode::are_points_the_same(ofVec2f a, ofVec2f b){
+    return ofDistSquared(a.x,a.y, b.x,b.y) <= powf(max_dist_to_consider_pnts_touching,2);
+    
 }
 
 //--------------------------------------------------------------
