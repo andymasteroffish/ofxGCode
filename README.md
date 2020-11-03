@@ -10,5 +10,5 @@ This is a work in progress. Some parts are a bit buggy. I'll add features as I n
 If you like my plotter work, you can buy some of it here: https://andymakes.bigcartel.com/
 
 This library incorporates some features from these repos:
-https://github.com/tobiaszimmer/ofxHersheyFont
-https://github.com/osresearch/vst
+* https://github.com/tobiaszimmer/ofxHersheyFont
+* https://github.com/osresearch/vst
