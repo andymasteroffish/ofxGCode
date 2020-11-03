@@ -42,6 +42,6 @@ GLine Overhaul
 New features
 [] rounded rect function
 	[] option to export points
-[] add hershey font
+[X] add hershey font
 	
 
