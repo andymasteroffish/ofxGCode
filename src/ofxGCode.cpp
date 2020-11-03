@@ -295,7 +295,7 @@ void ofxGCode::line(float x1, float y1, float x2, float y2){
     
     //clip the points to fit our canvas, rejecting the line if it would be entirely out of bounds
     if (!clip.clip(p1, p2)) {
-        cout<<"no part of this line is on screen"<<endl;
+        //cout<<"no part of this line is on screen"<<endl;
         return;
     }
     
