@@ -20,8 +20,6 @@ void ofxGCode::setup(float _pixels_per_inch){
     show_transit_lines = false;
     show_path_with_color = false;
     show_do_not_reverse = false;
-    do_not_draw_dots = false;
-    debug_show_point_numbers = false;
     demo_col.set(0,0,0);
 }
 
@@ -86,7 +84,7 @@ void ofxGCode::draw(int max_lines_to_show){
     
 }
 
-
+//genertaes gcode and writes it to a file
 void ofxGCode::save(string name){
     float inches_per_pixel = 1.0 / pixels_per_inch;
     

@@ -186,11 +186,6 @@ void GLine::trim_flexible_polygon(vector<ofVec2f> pnts, bool trim_inside, vector
         intersection_pnts.push_back(b);
     }
     
-//    cout<<"num intersects "<<intersection_pnts.size()<<endl;
-//    for (int i=0; i<intersection_pnts.size(); i++){
-//        cout<<"  "<<intersection_pnts[i]<<endl;
-//    }
-    
     //if we have an odd number, something bad happened
     if (intersection_pnts.size() % 2 == 1){
         cout<<"SOMETHING BAD HAPPENED"<<endl;
@@ -237,20 +232,10 @@ bool GLine::clip_inside_rect(ofRectangle rect){
     cout<<"clip_inside_rect HAS BEEN REMOVED use trim_outside_rect instead!"<<endl;
     return false;
 }
-
-//trims any part of the line not in the polygon
-//returns true if the line shoudl be removed entirely
-//THIS WILL FAIL IF A AND B ARE OUTSIDE THE POLYGON BUT PART OF THE LINE IS INSIDE
-//THIS WILL PARTIALLY FAIL IF THE LINE PASSES THROUGH THE POLYGON IN TWO POINTS
 bool GLine::clip_inside_polygon(vector<ofVec2f> pnts){
     cout<<"clip_inside_polygon HAS BEEN REMOVED use trim_outside_polygon instead!"<<endl;
     return false;
 }
-
-//trims any part of the line inside the polygon
-//returns true if the line shoudl be removed entirely
-//THIS WILL FAIL IF A AND B ARE OUTSIDE THE POLYGON BUT PART OF THE LINE IS INSIDE
-//THIS WILL PARTIALLY FAIL IF THE LINE PASSES THROUGH THE POLYGON IN TWO POINTS
 bool GLine::clip_outside_polygon(vector<ofVec2f> pnts){
     cout<<"clip_outside_polygon HAS BEEN REMOVED use trim_inside_polygon instead!"<<endl;
     return false;

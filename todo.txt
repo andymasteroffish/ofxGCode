@@ -1,8 +1,8 @@
 ofxGCode Updates
 
 [X] remove fbo
-[] have everything represented by GLine
-[] standardize the language around “clip inside”
+[X] have everything represented by GLine
+[X] standardize the language around “clip inside”
 [] size independent from window size
 
 Stretch:
@@ -22,7 +22,7 @@ GLine Overhaul
 [X] work on simplify() or remove it
 	-I think you can just get rid of it TBH
 [X] draw transit lines
-[] clean up and remove commented out old code
+[X] clean up and remove commented out old code
 [X] measureTransitDistance()
 [X] variable for the M3 command (how far you drop the pen, currently 60)
 [X] Can you use equals on the ofVec2fs or do you need a very small distance that you consider as the same?

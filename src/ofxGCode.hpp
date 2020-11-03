@@ -6,7 +6,6 @@
 //A fair chunk of code in this project was ported from the Processing VST library by Trammell Hudson
 //https://github.com/osresearch/vst
 
-//I'M REDOING THIS TO PLAY NICE WITH THE AXIDRAW, WHICH USES THE SAME COORDINATE PLANE AS oF!
 
 #ifndef ofxGCode_hpp
 #define ofxGCode_hpp
@@ -25,7 +24,6 @@ public:
     
     void draw(int max_lines_to_show = -1);
     
-    //void generate_gcode();
     void save(string name);
     
     void rect(ofRectangle box);
@@ -52,8 +50,6 @@ public:
     void dot(float x, float y);
     
     void text(string text, ofTrueTypeFont * font, float x, float y);
-    
-    //void translate(float x, float y);
     
     ofVec2f getModelPoint(ofVec3f pnt);
     ofVec2f getModelPoint(float x, float y);
@@ -100,13 +96,12 @@ public:
     
     Clipping clip;
     
-    bool debug_show_point_numbers;
+    
     
     //showing info
     bool show_transit_lines;
     bool show_path_with_color;
     bool show_do_not_reverse;
-    bool do_not_draw_dots;
     
     ofColor demo_col;
     
