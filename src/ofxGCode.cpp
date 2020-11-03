@@ -84,84 +84,6 @@ void ofxGCode::draw(int max_lines_to_show){
         }
     }
     
-    /*
-    if (list.size() > 1){
-        float prev_x = list[0].x;
-        float prev_y = list[0].y;
-        float prev_speed = list[0].speed;
-        float prev_pressure = list[0].pressure;
-        for (int i=0; i<list.size(); i++){
-            if (draw_count > max_lines_to_show && max_lines_to_show > 0){
-                return;
-            }
-            GCodePoint pnt = list[i];
-            if (pnt.pressure == 0){
-                draw_count++;
-                if (show_transit_lines){
-                    ofSetColor(255, 0,0, 60);
-                }else{
-                    ofSetColor(255, 0,0, 0);
-                }
-                
-            }else{
-                float speed_prc = ofMap(speed, 1000, max_speed, 1, 0);  //setting an arbitrary min
-                speed_prc = powf(speed_prc, 0.5);                       //smoothing this out since a medium speed still looks pretty black
-                ofSetColor(demo_col.r, demo_col.g, demo_col.b, speed_prc * 255);
-                
-                //fading between colors to show order
-                if (show_path_with_color){
-                    float prc = (float)i/(float)list.size();
-                    ofSetColor(0, 255.0*(1.0-prc), 255*prc);
-                }
-                
-                if (show_do_not_reverse && pnt.do_not_reverse){
-                    ofSetColor(255, 38, 226);
-                    if (list[i-1].pressure == 0){
-                        //throw wings on it
-                        float prc = 0.9;
-                        ofVec2f wing_pnt;
-                        wing_pnt.x = (1.0-prc)*prev_x + prc*pnt.x;
-                        wing_pnt.y = (1.0-prc)*prev_y + prc*pnt.y;
-                        //ofDrawCircle(wing_pnt.x, wing_pnt.y, 2);
-                        float angle = atan2(prev_y-pnt.y, prev_x-pnt.x);
-                        float dist = 7;
-                        float spread = PI/8;
-                        ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle+spread)*dist, wing_pnt.y+sin(angle+spread)*dist);
-                        ofDrawLine(wing_pnt.x, wing_pnt.y, wing_pnt.x+cos(angle-spread)*dist, wing_pnt.y+sin(angle-spread)*dist);
-                    }
-                }
-            }
-            
-            //won't be able to see dots if we're drawing lines
-            //THIS IS NOT REALLY Working right now
-            bool is_dot = false;// prev_x == pnt.x && prev_y == pnt.y && pnt.pressure > 0;
-            
-            if (do_not_draw_dots)   is_dot = false;
-            
-            if (!is_dot){
-                ofDrawLine(prev_x, prev_y, pnt.x, pnt.y);
-            }else{
-                ofDrawCircle(pnt.x, pnt.y, 2);
-            }
-            
-            //testing
-            if (debug_show_point_numbers){
-                 if (pnt.pressure == 0){
-                     ofSetColor(255,0,0);
-                 }else{
-                     ofSetColor(0);
-                 }
-                //ofDrawBitmapString(ofToString(i), (pnt.x+prev_x)/2.0, (pnt.y+prev_y)/2.0);
-                ofDrawBitmapString(ofToString(i), pnt.x, pnt.y-((float)i*2));// - i*10);
-            }
-            
-            prev_x = pnt.x;
-            prev_y = pnt.y;
-            prev_speed = pnt.speed;
-            prev_pressure = pnt.pressure;
-        }
-    }
-     */
 }
 
 
@@ -609,43 +531,6 @@ void ofxGCode::trim_outside_box(ofRectangle bounds){
     lines = trim_lines_outside_box(lines, bounds);
 }
 
-
-ofPoint ofxGCode::find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds){
-    for (int i=0; i<bounds.size(); i++){
-        int next_id = (i+1)%bounds.size();
-        
-        ofPoint out;
-        ofPoint pnt_a = ofPoint(a.x, a.y);
-        ofPoint pnt_b = ofPoint(b.x, b.y);
-        ofPoint border1 = bounds[i];
-        ofPoint border2 = bounds[next_id];
-        
-        if (ofLineSegmentIntersection(pnt_a, pnt_b, border1, border2, out)){
-            return out;
-        }
-    }
-    
-    return ofPoint(-1,-1);
-}
-
-vector<ofPoint> ofxGCode::find_intersections(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds){
-    vector<ofPoint> vals;
-    for (int i=0; i<bounds.size(); i++){
-        int next_id = (i+1)%bounds.size();
-        
-        ofPoint out;
-        ofPoint pnt_a = ofPoint(a.x, a.y);
-        ofPoint pnt_b = ofPoint(b.x, b.y);
-        ofPoint border1 = bounds[i];
-        ofPoint border2 = bounds[next_id];
-        
-        if (ofLineSegmentIntersection(pnt_a, pnt_b, border1, border2, out)){
-            vals.push_back(out);
-        }
-    }
-    
-    return vals;
-}
 
 //--------------------------------------------------------------
 //any lines outside of this bounds will be forced to draw from the center out.

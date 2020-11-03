@@ -13,7 +13,6 @@
 
 #include "ofMain.h"
 #include "Clipping.hpp"
-#include "GCodePoint.h"
 #include "GLine.hpp"
 #include "GCodeLineGroup.h"
 
@@ -74,9 +73,6 @@ public:
     static vector<GLine> trim_lines_outside_box(vector<GLine> lines, ofRectangle bounds);
     void trim_outside_box(ofRectangle bounds);
     
-    
-    ofPoint find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
-    vector<ofPoint> find_intersections(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
     
     //any lines outside of this bound will be forced to draw from the center out. 
     void set_outwards_only_bounds(ofRectangle safe_area);

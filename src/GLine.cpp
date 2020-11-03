@@ -53,6 +53,11 @@ GLine GLine::get_offset(ofVec2f offset){
 
 void GLine::draw(){
     ofDrawLine(a,b);
+    
+    //if this line has no distance, draw a little circle to mark it
+    if (a == b){
+        ofDrawCircle(a.x, a.y, 0.5);
+    }
 }
 
 vector<GLine> GLine::get_segments(int num_segments){
