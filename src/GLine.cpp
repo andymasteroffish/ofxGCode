@@ -213,80 +213,6 @@ void GLine::trim_flexible_polygon(vector<ofVec2f> pnts, bool trim_inside, vector
 }
 
 
-bool GLine::clip_inside_rect(ofRectangle rect){
-    vector<ofVec2f> pnts;
-    pnts.push_back( ofVec2f(rect.x,rect.y));
-    pnts.push_back( ofVec2f(rect.x+rect.width,rect.y));
-    pnts.push_back( ofVec2f(rect.x+rect.width,rect.y+rect.height));
-    pnts.push_back( ofVec2f(rect.x,rect.y+rect.height));
-    clip_inside_polygon(pnts);
-}
-
-//trims any part of the line not in the polygon
-//returns true if the line shoudl be removed entirely
-//THIS WILL FAIL IF A AND B ARE OUTSIDE THE POLYGON BUT PART OF THE LINE IS INSIDE
-//THIS WILL PARTIALLY FAIL IF THE LINE PASSES THROUGH THE POLYGON IN TWO POINTS
-bool GLine::clip_inside_polygon(vector<ofVec2f> pnts){
-    bool a_in, b_in;
-    
-    //if both points of this line are outside of the polygon, just remove it
-    a_in = checkInPolygon(pnts, a.x, a.y);
-    b_in = checkInPolygon(pnts, b.x, b.y);
-    
-    if (!a_in && !b_in){
-        skip_me = true;
-        return true;
-    }
-    
-    //make sure A is on the inside
-    if (b_in){
-        swap_a_and_b();
-    }
-    
-    //check if we are intersecting any of these lines
-    for (int i=0; i<pnts.size(); i++){
-        GLine other;
-        other.set(pnts[i], pnts[(i+1)%pnts.size()]);
-        clip_to_other_line(other);
-    }
-    
-    return false;
-}
-
-//trims any part of the line inside the polygon
-//returns true if the line shoudl be removed entirely
-//THIS WILL FAIL IF A AND B ARE OUTSIDE THE POLYGON BUT PART OF THE LINE IS INSIDE
-//THIS WILL PARTIALLY FAIL IF THE LINE PASSES THROUGH THE POLYGON IN TWO POINTS
-bool GLine::clip_outside_polygon(vector<ofVec2f> pnts){
-    bool a_in, b_in;
-    
-    //if both points of this line are outside of the polygon, just remove it
-    a_in = checkInPolygon(pnts, a.x, a.y);
-    b_in = checkInPolygon(pnts, b.x, b.y);
-    
-    if (a_in && b_in){
-        skip_me = true;
-        return true;
-    }
-    
-    //make sure A is on the outside
-    if (a_in){
-        swap_a_and_b();
-    }
-    
-    //check if we are intersecting any of these lines
-    for (int i=0; i<pnts.size(); i++){
-        GLine other;
-        other.set(pnts[i], pnts[(i+1)%pnts.size()]);
-        clip_to_other_line(other);
-    }
-    
-    return false;
-}
-
-
-
-
 bool GLine::checkInPolygon(vector<ofVec2f> p, float x, float y)
 {
     int i, j, c = 0;
@@ -297,4 +223,30 @@ bool GLine::checkInPolygon(vector<ofVec2f> p, float x, float y)
             c = !c;
     }
     return c;
+}
+
+
+
+//These functions have been depricated
+bool GLine::clip_inside_rect(ofRectangle rect){
+    cout<<"clip_inside_rect HAS BEEN REMOVED use trim_outside_rect instead!"<<endl;
+    return false;
+}
+
+//trims any part of the line not in the polygon
+//returns true if the line shoudl be removed entirely
+//THIS WILL FAIL IF A AND B ARE OUTSIDE THE POLYGON BUT PART OF THE LINE IS INSIDE
+//THIS WILL PARTIALLY FAIL IF THE LINE PASSES THROUGH THE POLYGON IN TWO POINTS
+bool GLine::clip_inside_polygon(vector<ofVec2f> pnts){
+    cout<<"clip_inside_polygon HAS BEEN REMOVED use trim_outside_polygon instead!"<<endl;
+    return false;
+}
+
+//trims any part of the line inside the polygon
+//returns true if the line shoudl be removed entirely
+//THIS WILL FAIL IF A AND B ARE OUTSIDE THE POLYGON BUT PART OF THE LINE IS INSIDE
+//THIS WILL PARTIALLY FAIL IF THE LINE PASSES THROUGH THE POLYGON IN TWO POINTS
+bool GLine::clip_outside_polygon(vector<ofVec2f> pnts){
+    cout<<"clip_outside_polygon HAS BEEN REMOVED use trim_inside_polygon instead!"<<endl;
+    return false;
 }

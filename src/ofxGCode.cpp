@@ -871,6 +871,19 @@ void ofxGCode::trim_inside_polygon(vector<ofVec2f> bounds){
     lines = trim_lines_inside_polygon(lines, bounds);
 }
 
+//helper function for trimming rectangles
+vector<GLine> ofxGCode::trim_lines_inside_box(vector<GLine> lines, ofRectangle bounds){
+    vector<ofVec2f> pnts;
+    pnts.push_back(ofVec2f(bounds.x, bounds.y));
+    pnts.push_back(ofVec2f(bounds.x+bounds.width, bounds.y));
+    pnts.push_back(ofVec2f(bounds.x+bounds.width, bounds.y+bounds.height));
+    pnts.push_back(ofVec2f(bounds.x, bounds.y+bounds.height));
+    return trim_lines_inside_polygon(lines, pnts);
+}
+void ofxGCode::trim_inside_box(ofRectangle bounds){
+    lines = trim_lines_inside_box(lines, bounds);
+}
+
 //takes any vector of lines and returns a new vector where any lines outside the shape have been removed
 vector<GLine> ofxGCode::trim_lines_outside_polygon(vector<GLine> lines, vector<ofVec2f> bounds){
     vector<GLine> output;
@@ -893,167 +906,21 @@ void ofxGCode::trim_outside_polygon(vector<ofVec2f> bounds){
     lines = trim_lines_outside_polygon(lines, bounds);
 }
 
-
-//this is just a hack that uses clip_inside to make a bunch of boxes around the described box
-void ofxGCode::clip_outside(ofRectangle bounding_box){
-    
-    ofRectangle above;
-    above.set(0,0, clip.max.x, bounding_box.y);
-    
-    ofRectangle below;
-    below.set(0,bounding_box.y+bounding_box.height, clip.max.x, clip.max.y-bounding_box.y-bounding_box.height+10);
-    
-    ofRectangle left;
-    left.set(0,0, bounding_box.x, clip.max.y);
-    
-    ofRectangle right;
-    right.set(bounding_box.x+bounding_box.width, 0, clip.max.x - bounding_box.x-bounding_box.width+10, clip.max.y);
-    
-    clip_inside(above);
-    clip_inside(below);
-    clip_inside(left);
-    clip_inside(right);
+//helper function for trimming rectangles
+vector<GLine> ofxGCode::trim_lines_outside_box(vector<GLine> lines, ofRectangle bounds){
+    vector<ofVec2f> pnts;
+    pnts.push_back(ofVec2f(bounds.x, bounds.y));
+    pnts.push_back(ofVec2f(bounds.x+bounds.width, bounds.y));
+    pnts.push_back(ofVec2f(bounds.x+bounds.width, bounds.y+bounds.height));
+    pnts.push_back(ofVec2f(bounds.x, bounds.y+bounds.height));
+    return trim_lines_outside_polygon(lines, pnts);
+}
+void ofxGCode::trim_outside_box(ofRectangle bounds){
+    lines = trim_lines_outside_box(lines, bounds);
 }
 
-//this would be more efficient if you used Trammel's clipping class
-//this thing is wildly inefficient
-void ofxGCode::clip_inside(ofRectangle bounding_box){
-    
-    //get a list of points for the bounds
-    vector<ofVec2f> bounds;
-    bounds.push_back( ofVec2f(bounding_box.x,bounding_box.y));
-    bounds.push_back( ofVec2f(bounding_box.x+bounding_box.width, bounding_box.y));
-    bounds.push_back( ofVec2f(bounding_box.x+bounding_box.width, bounding_box.y+bounding_box.height));
-    bounds.push_back( ofVec2f(bounding_box.x, bounding_box.y+bounding_box.height));
-    
-    //this should really just be a helper for the polygon funciton
-    clip_inside(bounds);
-    
-}
 
-void ofxGCode::clip_inside(vector<ofVec2f> bounds){
-    /*
-    if (list.size() < 2){
-        return;
-    }
-    
-    //go through all points to see if they make up a line that passes through the bounds
-    //this probably will not work with weird shapes that create more than 2 intersections
-    for (int i=0; i<list.size()-1; i++){
-        GCodePoint * pnt = &list[i];
-        GCodePoint * next = &list[i+1];
-        
-        //we only care if the pen is down
-        if (next->pressure > 0){
-            vector<ofPoint> intersects = find_intersections(*pnt, *next, bounds);
-            if (intersects.size() >= 2){
-                
-                //cout<<"double intersect"<<endl;
-                
-                //figure out which intersect is closer to each point
-                ofPoint close_to_pnt = intersects[0];
-                ofPoint close_to_next = intersects[0];
-                float min_dist_to_pnt = ofDistSquared(close_to_pnt.x, close_to_pnt.y, pnt->x, pnt->y);
-                float min_dist_to_next = ofDistSquared(close_to_pnt.x, close_to_pnt.y, next->x, next->y);
-                
-                for (int k=1; k<intersects.size(); k++){
-                    float dist_to_pnt = ofDistSquared(intersects[k].x, intersects[k].y, pnt->x, pnt->y);
-                    float dist_to_next = ofDistSquared(intersects[k].x, intersects[k].y, next->x, next->y);
-                    if (dist_to_pnt < min_dist_to_pnt){
-                        close_to_pnt = intersects[k];
-                        min_dist_to_pnt = dist_to_pnt;
-                    }
-                    if (dist_to_next < min_dist_to_next){
-                        close_to_next = intersects[k];
-                        min_dist_to_next = dist_to_next;
-                    }
-                }
-                
-                //insert them as new points
-                GCodePoint new_pnt = GCodePoint(close_to_pnt.x,close_to_pnt.y, next->speed, next->pressure);
-                GCodePoint new_next = GCodePoint(close_to_next.x,close_to_next.y, next->speed, 0);
-                
-                list.insert(list.begin()+i+1, new_next);
-                list.insert(list.begin()+i+1, new_pnt);
-            }
-        }
-    }
-    
-    //go though all points to see if they make up a line partially inside the bounds
-    //cout<<"size: "<<list.size()<<endl;
-    for (int i=0; i<list.size(); i++){
-        GCodePoint * pnt = &list[i];
-        //cout<<"--checking "<<i<<"  pres: "<<pnt->pressure<<"   x: "<<pnt->x<<"  y: "<<pnt->y<<endl;
-        if (checkInPolygon(bounds, pnt->x, pnt->y)){
-            //cout<<"inside at "<<pnt->x<<" , "<<pnt->y<<endl;
-            
-            //if pen was down to get here, we need to consider what came before
-            bool preserve_point = false;
-            if (pnt->pressure > 0 && i > 0){
-                GCodePoint prev = list[i-1];
-                
-                if (!checkInPolygon(bounds, prev.x, prev.y)){
-                    //cout<<"bad boy "<<i<<" at "<<pnt->x<<","<<pnt->y<<endl;
-                    ofPoint intersect = find_intersection(*pnt, prev, bounds);
-                    //move this point to the intersect
-                    if (intersect.x != -1){
-                        //cout<<"  move to "<<intersect.x<<" "<<intersect.y<<endl;
-                        pnt->x = intersect.x;
-                        pnt->y = intersect.y;
-                        preserve_point = true;
-                    }else{
-//                        cout<<"  we fucked up at "<<i<<endl;
-//                        cout<<"  pnt "<<pnt->x<<","<<pnt->y<<endl;
-//                        cout<<"  prev "<<prev.x<<","<<prev.y<<endl;
-                        //if we fucked up, just lift up the pen
-                        pnt->pressure = 0;
-                    }
-                }
-            }
-            
-            //what comes next?
-            if (i < list.size()-1){
-                GCodePoint * next = &list[i+1];
-                //if the next one is also inside, we can just kill this one
-                //also if the next point is a pen-up move
-                if (!preserve_point && (checkInPolygon(bounds, next->x, next->y) || next->pressure ==0) ){
-                    //cout<<"kill "<<i<<" at "<<list[i].x<<" , "<<list[i].y <<endl;
-                    
-                    //if pen was up to get here, we should lift the pen up for the next move
-                    if (pnt->pressure == 0){
-                        next->pressure = 0;
-                    }
-                    
-                    list.erase(list.begin()+i);
-                    i--;
-                    //next->pressure = 0;
-                }
-                //if it is outside we should clip
-                else if (!preserve_point && !checkInPolygon(bounds, next->x, next->y)){
-                    //cout<<"next bad boy "<<i<<" at "<<next->x<<","<<next->y<<endl;
-                    ofPoint intersect = find_intersection(*pnt, *next, bounds);
-                    //move this point to the intersect
-                    if (intersect.x != -1){
-                        //cout<<"  move to "<<intersect.x<<" "<<intersect.y<<endl;
-                        pnt->x = intersect.x;
-                        pnt->y = intersect.y;
-                        pnt->pressure = 0;
-                    }else{
-//                        cout<<"  late fucked up at "<<i<<endl;
-//                        cout<<"  pnt "<<pnt->x<<","<<pnt->y<<endl;
-//                        cout<<"  prev "<<next->x<<","<<next->y<<endl;
-                    }
-                }
-                else{
-                    //cout<<"setting pressure for "<<i<<" to 0"<<endl;
-                    next->pressure = 0;
-                }
-                
-            }
-        }
-    }
-     */
-}
+
 
 ofPoint ofxGCode::find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds){
     for (int i=0; i<bounds.size(); i++){
@@ -1218,6 +1085,22 @@ bool ofxGCode::checkInPolygon(vector<ofVec2f> p, float x, float y)
 }
 
 
+
+
+//these are depricated
+void ofxGCode::clip_outside(ofRectangle bounding_box){
+    cout<<"clip_outside is depricated. Use trim_outside_box"<<endl;
+}
+
+//this would be more efficient if you used Trammel's clipping class
+//this thing is wildly inefficient
+void ofxGCode::clip_inside(ofRectangle bounding_box){
+    cout<<"clip_inside is depricated. Use trim_inside_box"<<endl;
+}
+
+void ofxGCode::clip_inside(vector<ofVec2f> bounds){
+    cout<<"clip_inside is depricated. Use trim_inside_polygon"<<endl;
+}
 
 
 

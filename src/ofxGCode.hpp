@@ -70,14 +70,15 @@ public:
     //functions for trimming
     static vector<GLine> trim_lines_inside_polygon(vector<GLine> lines, vector<ofVec2f> bounds);
     void trim_inside_polygon(vector<ofVec2f> bounds);
+    static vector<GLine> trim_lines_inside_box(vector<GLine> lines, ofRectangle bounds);
+    void trim_inside_box(ofRectangle bounds);
     
     static vector<GLine> trim_lines_outside_polygon(vector<GLine> lines, vector<ofVec2f> bounds);
     void trim_outside_polygon(vector<ofVec2f> bounds);
+    static vector<GLine> trim_lines_outside_box(vector<GLine> lines, ofRectangle bounds);
+    void trim_outside_box(ofRectangle bounds);
     
-    //KILL THESE OR RENAME THEM "QUICK"
-    void clip_outside(ofRectangle bounding_box);
-    void clip_inside(ofRectangle bounding_box);
-    void clip_inside(vector<ofVec2f> bounds);
+    
     ofPoint find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
     vector<ofPoint> find_intersections(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
     
@@ -90,7 +91,13 @@ public:
     //from http://paulbourke.net/geometry/insidepoly/
     bool checkInPolygon(vector<ofVec2f> p, float x, float y);
     
+    //these have been depricated
+    void clip_outside(ofRectangle bounding_box);
+    void clip_inside(ofRectangle bounding_box);
+    void clip_inside(vector<ofVec2f> bounds);
     
+    
+    //VALUES
     
     float pixels_per_inch;    //converison unit
     

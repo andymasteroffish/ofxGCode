@@ -37,19 +37,23 @@ public:
     void trim_inside_polygon(vector<ofVec2f> pnts, vector<GLine>* list = NULL);
     void trim_outside_polygon(vector<ofVec2f> pnts, vector<GLine>* list = NULL);
     
+    //polygon checker
+    bool checkInPolygon(vector<ofVec2f> p, float x, float y);
     
-    //KILL THESE (maybe rename them "quick")
+    //these have been removed
     bool clip_inside_rect(ofRectangle rect);
     bool clip_inside_polygon(vector<ofVec2f> pnts);
     bool clip_outside_polygon(vector<ofVec2f> pnts);
     
-    bool checkInPolygon(vector<ofVec2f> p, float x, float y);
     
+    //variables
     ofVec2f a, b;
     bool skip_me;
     bool do_not_reverse;
     
 private:
+    
+    //I don't want this to show up in autocomplete. just call trim_inside_polygon or trim_outside_polygon.
     void trim_flexible_polygon(vector<ofVec2f> pnts, bool trim_inside, vector<GLine>* list = NULL);
     
     
