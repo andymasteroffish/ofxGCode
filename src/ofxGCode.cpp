@@ -14,19 +14,14 @@ void ofxGCode::setup(float _pixels_per_inch){
     //inches for axidraw
     pixels_per_inch = _pixels_per_inch;
     
+    set_size(ofGetWidth(), ofGetHeight());
+    
+    //display stuff
     show_transit_lines = false;
     show_path_with_color = false;
     show_do_not_reverse = false;
     do_not_draw_dots = false;
-    
-    //last_translate_id = 0;
-    
-    max_dist_to_consider_pnts_touching = 0.001;
-    
-    set_size(ofGetWidth(), ofGetHeight());
-    
     debug_show_point_numbers = false;
-    
     demo_col.set(0,0,0);
 }
 
@@ -227,10 +222,10 @@ void ofxGCode::rect(ofRectangle box){
     rect(box.x, box.y, box.width, box.height);
 }
 void ofxGCode::rect(float x, float y, float w, float h){
-    line(x,y, x+w, y, true);
-    line(x+w,y, x+w, y+h, false);
-    line(x+w,y+h, x, y+h, false);
-    line(x,y+h, x, y, false);
+    line(x,y, x+w, y);
+    line(x+w,y, x+w, y+h);
+    line(x+w,y+h, x, y+h);
+    line(x,y+h, x, y);
 }
 
 void ofxGCode::circle(float x, float y, float size){
@@ -263,10 +258,10 @@ void ofxGCode::end_shape(bool close){
         return;
     }
     for (int i=0; i<shape_pnts.size()-1; i++){
-        line(shape_pnts[i].x, shape_pnts[i].y, shape_pnts[i+1].x, shape_pnts[i+1].y, i==0);
+        line(shape_pnts[i].x, shape_pnts[i].y, shape_pnts[i+1].x, shape_pnts[i+1].y);
     }
     if (close){
-        line(shape_pnts[shape_pnts.size()-1].x, shape_pnts[shape_pnts.size()-1].y, shape_pnts[0].x, shape_pnts[0].y, false);
+        line(shape_pnts[shape_pnts.size()-1].x, shape_pnts[shape_pnts.size()-1].y, shape_pnts[0].x, shape_pnts[0].y);
     }
 }
 
@@ -284,15 +279,11 @@ void ofxGCode::line(GLine _line){
     if (_line.skip_me)  return;
     line(_line.a.x,_line.a.y, _line.b.x,_line.b.y);
 }
-void ofxGCode::line(ofVec2f a, ofVec2f b, bool lift_pen){
+void ofxGCode::line(ofVec2f a, ofVec2f b){
     line(a.x, a.y, b.x, b.y);
 }
 
 void ofxGCode::line(float x1, float y1, float x2, float y2){
-    line(x1,y1, x2,y2, true);
-}
-
-void ofxGCode::line(float x1, float y1, float x2, float y2, bool lift_pen){
     ofVec2f p1 = getModelPoint(x1,y1);
     ofVec2f p2 = getModelPoint(x2,y2);
     
@@ -301,24 +292,10 @@ void ofxGCode::line(float x1, float y1, float x2, float y2, bool lift_pen){
         cout<<"no part of this line is on screen"<<endl;
         return;
     }
-
     
     GLine line;
     line.set(p1, p2);
     lines.push_back(line);
-    
-    //KILL ME
-//    if (!clip.clip(p1, p2)) {
-//        //cout<<"no part of this line is on screen"<<endl;
-//        return;
-//    }
-//
-//    if (lift_pen){
-//        point(p1.x, p1.y, speed, 0);
-//    }else{
-//        point(p1.x, p1.y, speed, pressure);
-//    }
-//    point(p2.x, p2.y, speed, pressure);
 }
 
 //Thick lines are just multiple lines, eenly spaced
@@ -363,37 +340,9 @@ void ofxGCode::bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps)
 }
 
 void ofxGCode::dot(float x, float y){
-    //MAKE THIS WORK
-    
-    /*
-    ofVec2f pnt = getModelPoint(x,y);
-    
-    if (clip.check_point(pnt) == false){
-        return;
-    }
-    
-    //transit line
-    point(x, y, speed, 0);
-    //drop the pen
-    point(x, y, speed, pressure);
-     */
-    
+    line(x,y,x,y);
 }
 
-//void ofxGCode::point(float x, float y, float speed, float pressure){
-//    
-//    if (x == last_x && y == last_y  ) {
-//        //cout<<"same point as last. ignored. "<<x<<","<<y<<endl;
-//        return;
-//    }
-//    last_x = x;
-//    last_y = y;
-//    
-//    //cout<<"adding at "<<x<<","<<y<<endl;
-//    
-//    GCodePoint pnt = GCodePoint(x,y,speed,pressure);
-//    list.push_back(pnt);
-//}
 
 //https://openframeworks.cc/documentation/graphics/ofTrueTypeFont/#show_getStringAsPoints
 void ofxGCode::text(string text, ofTrueTypeFont * font, float x, float y){
@@ -413,7 +362,7 @@ void ofxGCode::text(string text, ofTrueTypeFont * font, float x, float y){
         for (int j = 0; j < polylines.size(); j++){
             for (int k = 0; k < polylines[j].size(); k++){        
                 int next_id = (k+1) % polylines[j].size();
-                line(polylines[j][k].x,polylines[j][k].y, polylines[j][next_id].x,polylines[j][next_id].y, k==0);
+                line(polylines[j][k].x,polylines[j][k].y, polylines[j][next_id].x,polylines[j][next_id].y);
             }
         }
     }
@@ -421,14 +370,6 @@ void ofxGCode::text(string text, ofTrueTypeFont * font, float x, float y){
     ofPopMatrix();
 }
 
-//void ofxGCode::translate(float x, float y){
-//    for (int i=0; i<list.size(); i++){
-//        list[i].x += x;
-//        list[i].y += y;
-//    }
-//
-//    last_translate_id = list.size()-1;  //everything before this point has been moved at least once
-//}
 
 //This function is by Andy, it attempts to recreate the functionality of modelX() and modelY() in Processing
 //Currently it only works in 2D. 3D transformations will break it.
@@ -669,8 +610,6 @@ void ofxGCode::trim_outside_box(ofRectangle bounds){
 }
 
 
-
-
 ofPoint ofxGCode::find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds){
     for (int i=0; i<bounds.size(); i++){
         int next_id = (i+1)%bounds.size();
@@ -709,14 +648,7 @@ vector<ofPoint> ofxGCode::find_intersections(GCodePoint a, GCodePoint b, vector<
 }
 
 //--------------------------------------------------------------
-//returns true if points are close enough to consider identical
-bool ofxGCode::are_points_the_same(ofVec2f a, ofVec2f b){
-    return ofDistSquared(a.x,a.y, b.x,b.y) <= powf(max_dist_to_consider_pnts_touching,2);
-    
-}
-
-//--------------------------------------------------------------
-//any lines outside of this bounfs will be forced to draw from the center out.
+//any lines outside of this bounds will be forced to draw from the center out.
 void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
     
     for (int i=0; i<lines.size(); i++){
@@ -750,104 +682,6 @@ void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
         }
     }
     
-    /*
-    //cout<<"---set outwards---"<<endl;
-    if (list.size() < 2){
-        return;
-    }
-    
-    ofVec2f center;
-    center.x = (safe_area.x + safe_area.x+safe_area.width)/2;
-    center.y = (safe_area.y + safe_area.y+safe_area.height)/2;
-    
-    //cout<<"center "<<center.x<<" , "<<center.y<<endl;
-    
-    for (int i=0; i<list.size()-1; i++){
-        GCodePoint pnt_a = list[i];
-        //is this the start of a line segment?
-        if (pnt_a.pressure == 0){
-            int end_id = i+1;
-            GCodePoint pnt_b = list[end_id];
-            for (int k=i+1; k<list.size(); k++){
-                if (list[k].pressure == 0){
-                    break;
-                }else{
-                    end_id = k;
-                    pnt_b = list[k];
-                }
-            }
-
-            //is at least one point outside?
-            if (!safe_area.inside(pnt_a.x, pnt_a.y) || !safe_area.inside(pnt_b.x, pnt_b.y)){
-                
-                //if they're both outside, we need to split
-                if (!safe_area.inside(pnt_a.x, pnt_a.y) && !safe_area.inside(pnt_b.x, pnt_b.y)){
-//                    cout<<"gotta split at "<<list[i].x<<" , "<<list[i].y<<endl;
-//                    cout<<" ends  at "<<list[end_id].x<<" , "<<list[end_id].y<<endl;
-//                    cout<<"  i: "<<i<<"  end id "<<end_id<<endl;
-                    //start at a and move along until we find a segment in the safe zone
-                    for (int p=i+1; p<=end_id; p++){
-                        //cout<<"  trying "<<list[p].x<<" , "<<list[p].y<<endl;
-                        if (safe_area.inside(list[p].x, list[p].y)){
-                           // cout<<"  "<<list[p].x<<" , "<<list[p].y<<" works"<<endl;
-                            end_id = p;
-                            pnt_b = list[p];
-                            GCodePoint new_p = GCodePoint(list[p].x,list[p].y,speed,0);
-                            list.insert(list.begin()+end_id+1, new_p);
-                            break;
-                        }
-                    }
-                }
-                
-                bool need_to_flip = false;
-                
-                //if neight is in the safe area, figure out which is closer to the center
-                if (!safe_area.inside(pnt_b.x, pnt_b.y) && !safe_area.inside(pnt_a.x, pnt_a.y)){
-                    float dist_a = ofDistSquared(pnt_a.x, pnt_a.y, center.x, center.y);
-                    float dist_b = ofDistSquared(pnt_b.x, pnt_b.y, center.x, center.y);
-                    if (dist_b < dist_a){
-                        need_to_flip = true;
-                    }
-                }
-                
-                //if b is inside and a is out, we need to flip
-                if (safe_area.inside(pnt_b.x, pnt_b.y) && !safe_area.inside(pnt_a.x, pnt_a.y)){
-                    need_to_flip = true;
-                }
-                
-                //if they are in the right order, just keep them that way
-//                if (safe_area.inside(pnt_a.x, pnt_a.y)){
-//                    //do nothing
-////                    cout<<"do nothing for "<<i<<" to "<<end_id<<endl;
-////                    cout<<"  start "<<list[i].x<<" , "<<list[i].y<<endl;
-////                    cout<<"  end "<<list[end_id].x<<" , "<<list[end_id].y<<endl;
-//                }
-                
-                if (need_to_flip){
-//                    cout<<"flip for "<<i<<" to "<<end_id<<endl;
-//                    cout<<"  start "<<list[i].x<<" , "<<list[i].y<<endl;
-//                    cout<<"  end "<<list[end_id].x<<" , "<<list[end_id].y<<endl;
-                    GCodePoint * t0 = &list[i];
-                    GCodePoint * t1 = &list[end_id];
-                    int temp_pressure = t0->pressure;
-                    int temp_speed = t0->speed;
-                    t0->pressure = t1->pressure;
-                    t0->speed = t1->speed;
-                    t1->pressure = temp_pressure;
-                    t1->speed = temp_speed;
-
-                    std::reverse(list.begin()+i, list.begin()+end_id+1);
-                }
-
-                //mark them all as do not reverse
-                for (int p=i; p<=end_id; p++){
-                    //cout<<"   set "<<p<<" to not reverse at "<<list[p].x<<" , "<<list[p].y<<endl;
-                    list[p].do_not_reverse = true;
-                }
-            }
-        }
-    }
-    */
 }
 
 //--------------------------------------------------------------

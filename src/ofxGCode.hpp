@@ -42,9 +42,8 @@ public:
     void polygon(vector<ofVec2f> pnts);
     
     void line(GLine _line);
-    void line(ofVec2f a, ofVec2f b, bool lift_pen=false);
+    void line(ofVec2f a, ofVec2f b);
     void line(float x1, float y1, float x2, float y2);
-    void line(float x1, float y1, float x2, float y2, bool lift_pen);
     
     void thick_line(float x1, float y1, float x2, float y2, float spacing, int layers);
     void thick_line(ofVec2f base_a, ofVec2f base_b, float spacing, int layers);
@@ -52,8 +51,6 @@ public:
     void bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps = 50);
     
     void dot(float x, float y);
-    
-    //void point(float x, float y, float speed, float pressure);
     
     void text(string text, ofTrueTypeFont * font, float x, float y);
     
@@ -81,8 +78,6 @@ public:
     ofPoint find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
     vector<ofPoint> find_intersections(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
     
-    bool are_points_the_same(ofVec2f a, ofVec2f b);
-    
     //any lines outside of this bound will be forced to draw from the center out. 
     void set_outwards_only_bounds(ofRectangle safe_area);
     
@@ -102,8 +97,6 @@ public:
     
     int circle_resolution;
     int pen_down_value;
-    
-    float max_dist_to_consider_pnts_touching;
     
     vector<ofVec2f> shape_pnts; //used for begin_shape / end_shape
     

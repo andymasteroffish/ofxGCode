@@ -15,7 +15,7 @@ GLine Overhaul
 [] remove GCodePoint class
 [X] remove vector<GCodePoint> list
 [X] remove pressure and speed
-[] make sure you can still draw dots
+[X] make sure you can still draw dots
 [X] make sure sorting works
 	[X] sorting should consider clusters of lines that share the same start and end points as a group
 [X] do you need to store vector<string> commands or just generate in the make gcode function?
@@ -25,10 +25,10 @@ GLine Overhaul
 [] clean up and remove commented out old code
 [X] measureTransitDistance()
 [X] variable for the M3 command (how far you drop the pen, currently 60)
-[] Can you use equals on the ofVec2fs or do you need a very small distance that you consider as the same?
+[X] Can you use equals on the ofVec2fs or do you need a very small distance that you consider as the same?
 	-this is for figuring out if pen goes up
 	-drawing transit lines should use the same logic
-	[] get rid of are_points_the_same() and max_dist_to_consider_pnts_touching if not using
+	[X] get rid of are_points_the_same() and max_dist_to_consider_pnts_touching if not using
 [X] make sure clipping plans still works and that you cannot go out of range
 [X] make sure do not reverse works
 	[X] and show_do_not_reverse
