@@ -12,7 +12,7 @@ Stretch:
 
 GLine Overhaul
 [X] do things like last_x do anything? - No
-[] remove GCodePoint class
+[X] remove GCodePoint class
 [X] remove vector<GCodePoint> list
 [X] remove pressure and speed
 [X] make sure you can still draw dots
