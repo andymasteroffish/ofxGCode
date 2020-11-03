@@ -16,7 +16,8 @@ GLine Overhaul
 [X] remove vector<GCodePoint> list
 [X] remove pressure and speed
 [] make sure you can still draw dots
-[] make sure sorting works
+[X] make sure sorting works
+	[] sorting should consider clusters of lines that share the same start and end points as a group
 [X] do you need to store vector<string> commands or just generate in the make gcode function?
 [] work on simplify() or remove it
 	-I think you can just get rid of it TBH

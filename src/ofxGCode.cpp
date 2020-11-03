@@ -192,7 +192,7 @@ void ofxGCode::save(string name){
             commands.push_back("M3 S60");
         }
         else{
-            cout<<"do not life pen at "<<line.a<<endl;
+            //cout<<"do not life pen at "<<line.a<<endl;
         }
         
         //move to the end point
@@ -497,6 +497,64 @@ ofVec2f ofxGCode::getModelPoint(float x, float y){
 
 //this is not perfect yet. Some of the resulting order is deifnitely not as efficient as it could be
 void ofxGCode::sort(){
+    vector<GLine> unsorted;
+    
+    //move everything to the unsorted vector
+    for (int i=0; i<lines.size(); i++){
+        unsorted.push_back(lines[i]);
+    }
+    
+    //clear the list
+    lines.clear();
+    
+    ofVec2f cur_pnt = ofVec2f();
+    
+    //keep plucking the next closest line, flipping it if we have to
+    while (unsorted.size() > 0){
+        int close_id;
+        float close_dist_sq = 9999999;
+        bool need_to_flip = false;
+        
+        //check each unsorted line
+        for (int i=0; i<unsorted.size(); i++){
+            float dist_sq_a = ofDistSquared(unsorted[i].a.x, unsorted[i].a.y, cur_pnt.x, cur_pnt.y);
+            
+            //only get distance to B if it is OK to flip this line
+            float dist_sq_b = 99999999;
+            if (!unsorted[i].do_not_reverse){
+                dist_sq_b = ofDistSquared(unsorted[i].b.x, unsorted[i].b.y, cur_pnt.x, cur_pnt.y);
+            }
+            
+            //are either of these poitns the closest so far?
+            if (dist_sq_b < close_dist_sq){
+                close_dist_sq = dist_sq_b;
+                need_to_flip = true;
+                close_id = i;
+            }
+            if (dist_sq_a < close_dist_sq){
+                close_dist_sq = dist_sq_a;
+                need_to_flip = false;
+                close_id = i;
+            }
+        }
+        
+        //grab it!
+        GLine line = unsorted[close_id];
+        if (need_to_flip){
+            line.swap_a_and_b();
+        }
+        //remove it from unsorted
+        unsorted.erase(unsorted.begin() + close_id);
+        //add it to the list
+        lines.push_back(line);
+        //and mark the pos
+        cur_pnt = ofVec2f( line.b );
+        
+    }
+    
+    
+    
+    
     /*
     //cout<<"---sorting---"<<endl;
     vector<GCodePoint> destination;
@@ -789,6 +847,50 @@ float ofxGCode::measureTransitDistance(){
 //        last = f;
 //    }
     return distance;
+}
+
+//takes any vector of lines and returns a new vector where the spaces inside the polygon have been trimmed
+vector<GLine> ofxGCode::trim_lines_inside_polygon(vector<GLine> lines, vector<ofVec2f> bounds){
+    vector<GLine> output;
+    
+    //go through each line and try to trim it
+    for (int i=0; i<lines.size(); i++){
+        //trim it, adding any extra lines generated to the output
+        lines[i].trim_inside_polygon(bounds, &output);
+        //then if this line is still valid, add it as well
+        if (!lines[i].skip_me){
+            output.push_back(lines[i]);
+        }
+    }
+    
+    return output;
+}
+
+//trims the current list of lines, removing any points inside the given polygon
+void ofxGCode::trim_inside_polygon(vector<ofVec2f> bounds){
+    lines = trim_lines_inside_polygon(lines, bounds);
+}
+
+//takes any vector of lines and returns a new vector where any lines outside the shape have been removed
+vector<GLine> ofxGCode::trim_lines_outside_polygon(vector<GLine> lines, vector<ofVec2f> bounds){
+    vector<GLine> output;
+    
+    //go through each line and try to trim it
+    for (int i=0; i<lines.size(); i++){
+        //trim it, adding any extra lines generated to the output
+        lines[i].trim_outside_polygon(bounds, &output);
+        //then if this line is still valid, add it as well
+        if (!lines[i].skip_me){
+            output.push_back(lines[i]);
+        }
+    }
+    
+    return output;
+}
+
+//trims the current list of lines, removing any points outside the given polygon
+void ofxGCode::trim_outside_polygon(vector<ofVec2f> bounds){
+    lines = trim_lines_outside_polygon(lines, bounds);
 }
 
 

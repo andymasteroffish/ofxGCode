@@ -67,8 +67,15 @@ public:
     
     float measureTransitDistance();
     
-    void clip_outside(ofRectangle bounding_box);
+    //functions for trimming
+    static vector<GLine> trim_lines_inside_polygon(vector<GLine> lines, vector<ofVec2f> bounds);
+    void trim_inside_polygon(vector<ofVec2f> bounds);
     
+    static vector<GLine> trim_lines_outside_polygon(vector<GLine> lines, vector<ofVec2f> bounds);
+    void trim_outside_polygon(vector<ofVec2f> bounds);
+    
+    //KILL THESE OR RENAME THEM "QUICK"
+    void clip_outside(ofRectangle bounding_box);
     void clip_inside(ofRectangle bounding_box);
     void clip_inside(vector<ofVec2f> bounds);
     ofPoint find_intersection(GCodePoint a, GCodePoint b, vector<ofVec2f> bounds);
