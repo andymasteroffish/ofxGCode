@@ -35,6 +35,7 @@ public:
     
     //trimming the line
     void trim_inside_polygon(vector<ofVec2f> pnts, vector<GLine>* list = NULL);
+    void trim_outside_rect(ofRectangle rect, vector<GLine>* list = NULL);
     void trim_outside_polygon(vector<ofVec2f> pnts, vector<GLine>* list = NULL);
     
     //polygon checker

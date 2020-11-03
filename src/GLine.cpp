@@ -133,13 +133,21 @@ void GLine::swap_a_and_b(){
 //removes all parts of this line inside the polygon
 //if a list is provided, any new lines that need to be created will be added there
 void GLine::trim_inside_polygon(vector<ofVec2f> pnts, vector<GLine>* list){
-    trim_flexible_polygon(pnts, true, list);
+   return trim_flexible_polygon(pnts, true, list);
 }
 
 //removes all parts of this line outside the polygon
 //if a list is provided, any new lines that need to be created will be added there
 void GLine::trim_outside_polygon(vector<ofVec2f> pnts, vector<GLine>* list){
     trim_flexible_polygon(pnts, false, list);
+}
+void GLine::trim_outside_rect(ofRectangle rect, vector<GLine>* list){
+    vector<ofVec2f> pnts;
+    pnts.push_back(ofVec2f(rect.x, rect.y));
+    pnts.push_back(ofVec2f(rect.x+rect.width, rect.y));
+    pnts.push_back(ofVec2f(rect.x+rect.width, rect.y+rect.height));
+    pnts.push_back(ofVec2f(rect.x, rect.y+rect.height));
+    trim_outside_polygon(pnts, list);
 }
 
 //this will trim inside or outside depending on what is passed in
@@ -188,11 +196,18 @@ void GLine::trim_flexible_polygon(vector<ofVec2f> pnts, bool trim_inside, vector
     
     //if we have an odd number, something bad happened
     if (intersection_pnts.size() % 2 == 1){
-        cout<<"SOMETHING BAD HAPPENED"<<endl;
+        cout<<"SOMETHING BAD HAPPENED. intersections: "<<intersection_pnts.size()<<endl;
+        for (int i=0; i<intersection_pnts.size(); i++){
+            cout<<"  "<<intersection_pnts[i]<<endl;
+        }
+        
+        //this is a hack and probably bad, but for now I'm just nixing the first point because the 1st and second often seem really close for some reason
+        intersection_pnts.erase(intersection_pnts.begin());
     }
     
     //if we have no intersects, this line is entirely in the polygon and should be killed
-    if (intersection_pnts.size() == 0){
+    //we should never have exactly 1, but if we do, somehting went wrong and we should just remove this line
+    if (intersection_pnts.size() <= 1){
         skip_me = true;
         return;
     }
@@ -210,6 +225,7 @@ void GLine::trim_flexible_polygon(vector<ofVec2f> pnts, bool trim_inside, vector
             list->push_back(new_line);
         }
     }
+    
 }
 
 
