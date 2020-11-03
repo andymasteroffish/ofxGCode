@@ -11,7 +11,7 @@
 *  '-1' is a pen up operation e.g. the end of a line
 */
 
-
+//THIS IS FOR OFXHERSHEY FONT
 
 int simplex[95][112] = {
 	0,16, /* Ascii 32 */

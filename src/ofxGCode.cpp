@@ -148,6 +148,92 @@ void ofxGCode::rect(float x, float y, float w, float h){
     line(x,y+h, x, y);
 }
 
+void ofxGCode::rounded_rect(ofRectangle rect, float corner_size, int corner_resolution){
+    vector<ofVec2f> pnts = get_rounded_pnts(rect.x, rect.y, rect.width, rect.height, corner_size, corner_resolution);
+    polygon(pnts);
+}
+void ofxGCode::rounded_rect(float x, float y, float w, float h, float corner_size, int corner_resolution){
+    vector<ofVec2f> pnts = get_rounded_pnts(x, y, w, h, corner_size, corner_resolution);
+    polygon(pnts);
+}
+
+vector<ofVec2f> ofxGCode::get_rounded_pnts(ofRectangle rect, float corner_size, int corner_resolution){
+    return get_rounded_pnts(rect.x, rect.y, rect.width, rect.height, corner_size, corner_resolution);
+}
+vector<ofVec2f> ofxGCode::get_rounded_pnts(float x, float y, float w, float h, float corner_size, int corner_resolution){
+    
+    ofRectangle base = ofRectangle(x,y,w,h);
+    
+    vector<ofVec2f> pnts;
+    
+    pnts.push_back( ofVec2f(base.x+corner_size, base.y) );
+    pnts.push_back( ofVec2f(base.x+base.width-corner_size, base.y) );
+    
+    //top right
+    for (int i=1; i<corner_resolution; i++){
+        ofVec2f center;
+        center.x = base.x+base.width-corner_size;
+        center.y = base.y+corner_size;
+        
+        float angle = ofMap(i, 0, corner_resolution, -PI/2, 0);
+        ofVec2f pos;
+        pos.x = center.x + cos(angle) * corner_size;
+        pos.y = center.y + sin(angle) * corner_size;
+        
+        pnts.push_back(pos);
+    }
+    
+    pnts.push_back( ofVec2f(base.x+base.width, base.y+base.height-corner_size) );
+    
+    //bottom right
+    for (int i=1; i<corner_resolution; i++){
+        ofVec2f center;
+        center.x = base.x+base.width-corner_size;
+        center.y = base.y+base.height-corner_size;
+        
+        float angle = ofMap(i, 0, corner_resolution, 0, PI/2);
+        ofVec2f pos;
+        pos.x = center.x + cos(angle) * corner_size;
+        pos.y = center.y + sin(angle) * corner_size;
+        
+        pnts.push_back(pos);
+    }
+    
+    pnts.push_back( ofVec2f(base.x+corner_size, base.y+base.height) );
+    
+    //bottom left
+    for (int i=1; i<corner_resolution; i++){
+        ofVec2f center;
+        center.x = base.x+corner_size;
+        center.y = base.y+base.height-corner_size;
+        
+        float angle = ofMap(i, 0, corner_resolution, PI/2, PI);
+        ofVec2f pos;
+        pos.x = center.x + cos(angle) * corner_size;
+        pos.y = center.y + sin(angle) * corner_size;
+        
+        pnts.push_back(pos);
+    }
+    
+    pnts.push_back( ofVec2f(base.x, base.y+corner_size) );
+    
+    //top left
+    for (int i=1; i<corner_resolution; i++){
+        ofVec2f center;
+        center.x = base.x+corner_size;
+        center.y = base.y+corner_size;
+        
+        float angle = ofMap(i, 0, corner_resolution, PI, (3*PI)/2);
+        ofVec2f pos;
+        pos.x = center.x + cos(angle) * corner_size;
+        pos.y = center.y + sin(angle) * corner_size;
+        
+        pnts.push_back(pos);
+    }
+    
+    return pnts;
+}
+
 void ofxGCode::circle(float x, float y, float size){
     float angle_step =(TWO_PI/(float)circle_resolution);
     begin_shape();
@@ -247,16 +333,21 @@ void ofxGCode::thick_line(ofVec2f base_a, ofVec2f base_b, float spacing, int lay
 
 //Bezier Curves
 void ofxGCode::bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps){
-    
+    vector<ofVec2f> pnts = get_bezier_pnts(p1, c1, c2, p2, steps);
     begin_shape();
-    
+    for (int i=0; i<pnts.size(); i++){
+        vertex(pnts[i]);
+    }
+    end_shape(false);
+}
+
+vector<ofVec2f> ofxGCode::get_bezier_pnts(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps){
+    vector<ofVec2f> pnts;
     for (int i=0; i<=steps; i++){
         ofPoint pnt = ofBezierPoint(p1, c1, c2, p2, (float)i/(float)steps);
-        vertex(pnt);
+        pnts.push_back(pnt);
     }
-    
-    end_shape(false);
-    
+    return pnts;
 }
 
 void ofxGCode::dot(float x, float y){

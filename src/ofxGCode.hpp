@@ -29,6 +29,11 @@ public:
     void rect(ofRectangle box);
     void rect(float x, float y, float w, float h);
     
+    void rounded_rect(ofRectangle rect, float corner_size, int corner_resolution=10);
+    void rounded_rect(float x, float y, float w, float h, float corner_size, int corner_resolution=10);
+    static vector<ofVec2f> get_rounded_pnts(ofRectangle rect, float corner_size, int corner_resolution);
+    static vector<ofVec2f> get_rounded_pnts(float x, float y, float w, float h, float corner_size, int corner_resolution);
+    
     void circle(float x, float y, float size);
     
     void begin_shape();
@@ -46,6 +51,7 @@ public:
     void thick_line(ofVec2f base_a, ofVec2f base_b, float spacing, int layers);
     
     void bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps = 50);
+    static vector<ofVec2f> get_bezier_pnts(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps);
     
     void dot(float x, float y);
     
