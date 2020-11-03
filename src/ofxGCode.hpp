@@ -15,6 +15,7 @@
 #include "Clipping.hpp"
 #include "GCodePoint.h"
 #include "GLine.hpp"
+#include "GCodeLineGroup.h"
 
 class ofxGCode{
 public:
@@ -102,6 +103,7 @@ public:
     float pixels_per_inch;    //converison unit
     
     int circle_resolution;
+    int pen_down_value;
     
     float max_dist_to_consider_pnts_touching;
     
@@ -110,11 +112,6 @@ public:
     vector<GLine> lines;
     
     Clipping clip;
-    
-    
-    //vector<GCodePoint> list;
-    
-    //int last_translate_id;
     
     bool debug_show_point_numbers;
     
@@ -125,6 +122,9 @@ public:
     bool do_not_draw_dots;
     
     ofColor demo_col;
+    
+    //kill me
+    vector<GCodeLineGroup> line_groups;
     
 };
 

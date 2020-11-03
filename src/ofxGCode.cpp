@@ -9,6 +9,7 @@
 void ofxGCode::setup(float _pixels_per_inch){
     //set some defaults
     circle_resolution = 50;
+    pen_down_value = 60;
     
     //inches for axidraw
     pixels_per_inch = _pixels_per_inch;
@@ -40,6 +41,15 @@ void ofxGCode::clear(){
 }
 
 void ofxGCode::draw(int max_lines_to_show){
+    //testing
+//    for (int i=0; i<line_groups.size(); i++){
+//        ofSetColor(ofColor::fromHsb((i*30)%255, 255, 255));
+//        for (int k=0; k<line_groups[i].lines.size(); k++){
+//            line_groups[i].lines[k].draw();
+//        }
+//    }
+//    return;
+    
     int draw_count = 0;
     
     int end_index = MIN(max_lines_to_show, lines.size());
@@ -189,7 +199,7 @@ void ofxGCode::save(string name){
         if ( pos_a != last_pos){
             commands.push_back("M3 S0");
             commands.push_back("G0 X"+ofToString(pos_a.x)+" Y"+ofToString(pos_a.y));
-            commands.push_back("M3 S60");
+            commands.push_back("M3 S"+ofToString(pen_down_value));
         }
         else{
             //cout<<"do not life pen at "<<line.a<<endl;
@@ -497,32 +507,60 @@ ofVec2f ofxGCode::getModelPoint(float x, float y){
 
 //this is not perfect yet. Some of the resulting order is deifnitely not as efficient as it could be
 void ofxGCode::sort(){
-    vector<GLine> unsorted;
     
-    //move everything to the unsorted vector
-    for (int i=0; i<lines.size(); i++){
-        unsorted.push_back(lines[i]);
+    //try to break the lines into groups of continious lines
+    line_groups.clear();
+    GCodeLineGroup cur_group;
+    while (lines.size() > 0){
+        //if cur group is empty just grab the next line segment
+        if (cur_group.lines.size() == 0){
+            cur_group.add_to_front(lines[0]);
+            lines.erase(lines.begin());
+        }
+        
+        //go through and find segments that we can slap on the front or end
+        bool added_any = false;
+        for (int i=lines.size()-1; i>=0; i--){
+            if (lines[i].a == cur_group.end_pos){
+                cur_group.add_to_back(lines[i]);
+                lines.erase(lines.begin()+i);
+                added_any = true;
+            }
+            else if (lines[i].b == cur_group.start_pos){
+                cur_group.add_to_front(lines[i]);
+                lines.erase(lines.begin()+i);
+                added_any = true;
+            }
+        }
+        
+        //if we added any, keep going, otherwise bail
+        if (!added_any){
+            line_groups.push_back(cur_group);
+            cur_group.clear();
+        }
+    }
+    //when we're done, add the last group if there's anything in it
+    if (cur_group.lines.size() > 0){
+        line_groups.push_back(cur_group);
     }
     
-    //clear the list
-    lines.clear();
     
+    //go through finding the closest end point
     ofVec2f cur_pnt = ofVec2f();
-    
-    //keep plucking the next closest line, flipping it if we have to
-    while (unsorted.size() > 0){
+    while (line_groups.size() > 0){
         int close_id;
         float close_dist_sq = 9999999;
         bool need_to_flip = false;
         
-        //check each unsorted line
-        for (int i=0; i<unsorted.size(); i++){
-            float dist_sq_a = ofDistSquared(unsorted[i].a.x, unsorted[i].a.y, cur_pnt.x, cur_pnt.y);
+        //check each unsorted line group
+        for (int i=0; i<line_groups.size(); i++){
+            float dist_sq_a = ofDistSquared(line_groups[i].start_pos.x, line_groups[i].start_pos.y, cur_pnt.x, cur_pnt.y);
             
             //only get distance to B if it is OK to flip this line
             float dist_sq_b = 99999999;
-            if (!unsorted[i].do_not_reverse){
-                dist_sq_b = ofDistSquared(unsorted[i].b.x, unsorted[i].b.y, cur_pnt.x, cur_pnt.y);
+            bool can_reverse = true;
+            if (can_reverse){
+                dist_sq_b = ofDistSquared(line_groups[i].end_pos.x, line_groups[i].end_pos.y, cur_pnt.x, cur_pnt.y);
             }
             
             //are either of these poitns the closest so far?
@@ -538,19 +576,83 @@ void ofxGCode::sort(){
             }
         }
         
-        //grab it!
-        GLine line = unsorted[close_id];
-        if (need_to_flip){
-            line.swap_a_and_b();
-        }
-        //remove it from unsorted
-        unsorted.erase(unsorted.begin() + close_id);
-        //add it to the list
-        lines.push_back(line);
-        //and mark the pos
-        cur_pnt = ofVec2f( line.b );
+        GCodeLineGroup group = line_groups[close_id];
         
+        if (need_to_flip){
+            for (int i=group.lines.size()-1; i>=0; i--){
+                group.lines[i].swap_a_and_b();
+                lines.push_back(group.lines[i]);
+            }
+            cur_pnt = group.start_pos;
+        }else{
+            for (int i=0; i<group.lines.size(); i++){
+                lines.push_back(group.lines[i]);
+            }
+            cur_pnt = group.end_pos;
+        }
+        
+        //remove it from unsorted
+        line_groups.erase(line_groups.begin() + close_id);
     }
+    
+    
+    //KILL FROM HERE
+    
+//    //sort on that
+//    vector<GLine> unsorted;
+//
+//    //move everything to the unsorted vector
+//    for (int i=0; i<lines.size(); i++){
+//        unsorted.push_back(lines[i]);
+//    }
+//
+//    //clear the list
+//    lines.clear();
+//
+//    ofVec2f cur_pnt = ofVec2f();
+//
+//    //keep plucking the next closest line, flipping it if we have to
+//    while (unsorted.size() > 0){
+//        int close_id;
+//        float close_dist_sq = 9999999;
+//        bool need_to_flip = false;
+//
+//        //check each unsorted line
+//        for (int i=0; i<unsorted.size(); i++){
+//            float dist_sq_a = ofDistSquared(unsorted[i].a.x, unsorted[i].a.y, cur_pnt.x, cur_pnt.y);
+//
+//            //only get distance to B if it is OK to flip this line
+//            float dist_sq_b = 99999999;
+//            if (!unsorted[i].do_not_reverse){
+//                dist_sq_b = ofDistSquared(unsorted[i].b.x, unsorted[i].b.y, cur_pnt.x, cur_pnt.y);
+//            }
+//
+//            //are either of these poitns the closest so far?
+//            if (dist_sq_b < close_dist_sq){
+//                close_dist_sq = dist_sq_b;
+//                need_to_flip = true;
+//                close_id = i;
+//            }
+//            if (dist_sq_a < close_dist_sq){
+//                close_dist_sq = dist_sq_a;
+//                need_to_flip = false;
+//                close_id = i;
+//            }
+//        }
+//
+//        //grab it!
+//        GLine line = unsorted[close_id];
+//        if (need_to_flip){
+//            line.swap_a_and_b();
+//        }
+//        //remove it from unsorted
+//        unsorted.erase(unsorted.begin() + close_id);
+//        //add it to the list
+//        lines.push_back(line);
+//        //and mark the pos
+//        cur_pnt = ofVec2f( line.b );
+//
+//    }
     
     
     
@@ -654,11 +756,7 @@ void ofxGCode::sort(){
      */
 }
 
-//void ofxEleksDrawremove_duplicate_points(float max_dist_to_count = 0){
-//
-//}
-
-//trying to go thorugh and find lines that secretly connect
+//trying to go through and find lines that secretly connect
 void ofxGCode::simplify(float max_dist_to_combine_points){
     /*
     float max_dist_sq = powf(max_dist_to_combine_points, 2);
@@ -839,13 +937,11 @@ void ofxGCode::simplify(float max_dist_to_combine_points){
 
 float ofxGCode::measureTransitDistance(){
     float distance = 0.0;
-//    GCodePoint last = GCodePoint(0, 0, 0, 0);
-//    for (GCodePoint f : list) {
-//        if (f.pressure == 0){
-//            distance += ofDist(f.x, f.y, last.x, last.y);
-//        }
-//        last = f;
-//    }
+    
+    for (int i=0; i<lines.size(); i++){
+        distance += ofDist(lines[i].a.x, lines[i].a.y, lines[i].b.x, lines[i].b.y);
+    }
+    
     return distance;
 }
 
