@@ -550,7 +550,7 @@ void ofxGCode::sort(){
             
             //only get distance to B if it is OK to flip this line
             float dist_sq_b = 99999999;
-            bool can_reverse = true;
+            bool can_reverse = !line_groups[i].do_not_reverse;
             if (can_reverse){
                 dist_sq_b = ofDistSquared(line_groups[i].end_pos.x, line_groups[i].end_pos.y, cur_pnt.x, cur_pnt.y);
             }
@@ -718,6 +718,38 @@ bool ofxGCode::are_points_the_same(ofVec2f a, ofVec2f b){
 //--------------------------------------------------------------
 //any lines outside of this bounfs will be forced to draw from the center out.
 void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
+    
+    for (int i=0; i<lines.size(); i++){
+        bool a_inside = safe_area.inside(lines[i].a);
+        bool b_inside = safe_area.inside(lines[i].b);
+        //if both sides are in the safe area, do nothing. We can flip this line if we need to
+        if (a_inside && b_inside){
+            lines[i].do_not_reverse = false;
+        }
+        
+        //if only A is inside, keep the order but make sure it doesn't get flipped
+        else if (a_inside && !b_inside){
+            lines[i].do_not_reverse = true;
+        }
+        
+        //if only B is inside, flip it and make sure it does not get flipped again
+        else if (b_inside && !a_inside){
+            lines[i].swap_a_and_b();
+            lines[i].do_not_reverse = true;
+        }
+        
+        //if neither is inside, select the point closest to the center and have that be A
+        else{
+            ofVec2f center;
+            center.x = (safe_area.x + safe_area.x+safe_area.width)/2;
+            center.y = (safe_area.y + safe_area.y+safe_area.height)/2;
+            if (center.squareDistance(lines[i].a) > center.squareDistance(lines[i].b)){
+                lines[i].swap_a_and_b();
+            }
+            lines[i].do_not_reverse = true;
+        }
+    }
+    
     /*
     //cout<<"---set outwards---"<<endl;
     if (list.size() < 2){

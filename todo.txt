@@ -17,23 +17,21 @@ GLine Overhaul
 [X] remove pressure and speed
 [] make sure you can still draw dots
 [X] make sure sorting works
-	[] sorting should consider clusters of lines that share the same start and end points as a group
+	[X] sorting should consider clusters of lines that share the same start and end points as a group
 [X] do you need to store vector<string> commands or just generate in the make gcode function?
-[] work on simplify() or remove it
+[X] work on simplify() or remove it
 	-I think you can just get rid of it TBH
 [X] draw transit lines
 [] clean up and remove commented out old code
 [X] measureTransitDistance()
-
-[] set_outwards_only_bounds()
 [X] variable for the M3 command (how far you drop the pen, currently 60)
 [] Can you use equals on the ofVec2fs or do you need a very small distance that you consider as the same?
 	-this is for figuring out if pen goes up
 	-drawing transit lines should use the same logic
 	[] get rid of are_points_the_same() and max_dist_to_consider_pnts_touching if not using
 [X] make sure clipping plans still works and that you cannot go out of range
-[] make sure do not reverse works
-	[] and show_do_not_reverse
+[X] make sure do not reverse works
+	[X] and show_do_not_reverse
 [X] do you need last_translate_id? (I don’t think so)
 [X] test show_path_with_color
 [X] static trim inside function that takes a vector of Glines and returns fixed vector
