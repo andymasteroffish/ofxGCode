@@ -63,8 +63,6 @@ public:
     ofVec2f getModelPoint(float x, float y);
     
     void sort();
-    void simplify(float max_dist_to_combine_points = 0);
-    //void remove_duplicate_points(float max_dist_to_count = 0);
     
     float measureTransitDistance();
     
@@ -123,8 +121,6 @@ public:
     
     ofColor demo_col;
     
-    //kill me
-    vector<GCodeLineGroup> line_groups;
     
 };
 
