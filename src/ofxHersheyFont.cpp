@@ -20,9 +20,7 @@
 //--------------------------------------------------------------
 ofxHersheyFont::ofxHersheyFont(){
 	color = ofColor(0);
-    line_height = 33;
-//    default_symbol_size = 0.3;
-//    symbol_spacing = 70;    //non-scaled
+    line_height = 35;//33;
 }
 
 //--------------------------------------------------------------
@@ -118,7 +116,7 @@ void ofxHersheyFont::draw(string stringValue, float xPos, float yPos, float scal
     for (int i = 0; i < stringValue.size(); i++)
     {
         ofPushMatrix();
-        ofTranslate(characterXPos, line_num*line_height);
+        ofTranslate(characterXPos, line_num*line_height*scale);
         ofScale(scale, scale);  //ofScale(scale, -scale);
 
         //get ascii value of specific character from the input string
@@ -227,32 +225,42 @@ void ofxHersheyFont::setColor(ofColor c) {
 //--------------------------------------------------------------
 float ofxHersheyFont::getWidth(string stringValue, float scale){
 	float stringWidth = 0;
-
+    float longest_string_width;
+    
 	for (int i = 0; i < stringValue.size(); i++)
 	{
 		int asciiValue = stringValue.at(i);
-        //is this a symbol?
-        //if (stringValue.at(i) == '{'){
-//            char symbol_char = stringValue.at(i+1);
-//            if (symbol_char == 'W') asciiValue = SYMBOL_W;
-//            if (symbol_char == 'U') asciiValue = SYMBOL_U;
-//            if (symbol_char == 'B') asciiValue = SYMBOL_B;
-//            if (symbol_char == 'R') asciiValue = SYMBOL_R;
-//            if (symbol_char == 'G') asciiValue = SYMBOL_G;
-//            if (symbol_char == 'T') asciiValue = SYMBOL_TAP;
-//            i+=2;   //skip to the next real character
-//            stringWidth += symbol_spacing * default_symbol_size;
-//        }
-//        else{
-
-            //questionmark if character not available
-            if (asciiValue < 32 || asciiValue > 126) asciiValue = 63;
-            
+        if (asciiValue < 32 || asciiValue > 126) asciiValue = 63;
+        
+        if (stringValue.at(i) == '\n'){
+            if (longest_string_width < stringWidth){
+                longest_string_width = stringWidth;
+            }
+            stringWidth = 0;
+        }
+        else{
             stringWidth += (float)simplex[asciiValue - 32][1] * scale;
-        //}
+        }
 	}
+    
+    if (longest_string_width < stringWidth){
+        longest_string_width = stringWidth;
+    }
 
-	return stringWidth;
+	return longest_string_width;
+}
+
+//--------------------------------------------------------------
+//count the number of newlines and multiply by line height
+float ofxHersheyFont::getHeight(string stringValue, float scale){
+    int lines = 1;
+    for (int i=0; i<stringValue.length(); i++){
+        if (stringValue.at(i) == '\n'){
+            lines ++;
+        }
+    }
+    cout<<"num lines "<<lines<<endl;
+    return  line_height * lines * scale;
 }
 
 //--------------------------------------------------------------
@@ -261,6 +269,10 @@ float ofxHersheyFont::getHeight(float scale) {
 	float stringHeight = (float) 21 * scale;
 
 	return stringHeight;
+}
+
+float ofxHersheyFont::getLineHeight(float scale) {
+    return line_height * scale;
 }
 
 
