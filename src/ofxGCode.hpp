@@ -34,6 +34,7 @@ public:
     static vector<ofVec2f> get_rounded_pnts(ofRectangle rect, float corner_size, int corner_resolution);
     static vector<ofVec2f> get_rounded_pnts(float x, float y, float w, float h, float corner_size, int corner_resolution);
     
+    void circle(ofVec2f center, float size);
     void circle(float x, float y, float size);
     
     void begin_shape();
@@ -62,18 +63,20 @@ public:
     
     void sort();
     
+    void lock_lines();
+    
     float measureTransitDistance();
     
     //functions for trimming
-    static vector<GLine> trim_lines_inside_polygon(vector<GLine> lines, vector<ofVec2f> bounds);
-    void trim_inside_polygon(vector<ofVec2f> bounds);
-    static vector<GLine> trim_lines_inside_box(vector<GLine> lines, ofRectangle bounds);
-    void trim_inside_box(ofRectangle bounds);
+    static vector<GLine> trim_lines_inside(vector<GLine> lines, vector<ofVec2f> bounds);
+    void trim_inside(vector<ofVec2f> bounds);
+    static vector<GLine> trim_lines_inside(vector<GLine> lines, ofRectangle bounds);
+    void trim_inside(ofRectangle bounds);
     
-    static vector<GLine> trim_lines_outside_polygon(vector<GLine> lines, vector<ofVec2f> bounds);
-    void trim_outside_polygon(vector<ofVec2f> bounds);
-    static vector<GLine> trim_lines_outside_box(vector<GLine> lines, ofRectangle bounds);
-    void trim_outside_box(ofRectangle bounds);
+    static vector<GLine> trim_lines_outside(vector<GLine> lines, vector<ofVec2f> bounds);
+    void trim_outside(vector<ofVec2f> bounds);
+    static vector<GLine> trim_lines_outside(vector<GLine> lines, ofRectangle bounds);
+    void trim_outside(ofRectangle bounds);
     
     
     //any lines outside of this bound will be forced to draw from the center out. 

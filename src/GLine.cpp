@@ -13,18 +13,21 @@ GLine::GLine(){
     b.y = 0;
     skip_me = false;
     do_not_reverse = false;
+    is_locked = false;
 }
 
 GLine::GLine(ofVec2f _a, ofVec2f _b){
     set(_a, _b);
     skip_me = false;
     do_not_reverse = false;
+    is_locked = false;
 }
 
 GLine::GLine(float x1, float y1, float x2, float y2){
     set(x1,y1, x2,y2);
     skip_me = false;
     do_not_reverse = false;
+    is_locked = false;
 }
 
 void GLine::set(ofVec2f _a, ofVec2f _b){
@@ -42,6 +45,9 @@ void GLine::set(float x1, float y1, float x2, float y2){
     b.y = y2;
 }
 
+void GLine::set_locked(bool val){
+    is_locked = val;
+}
 //this does not change the current line, but returns a new one
 GLine GLine::get_offset(ofVec2f offset){
     GLine line;
@@ -132,34 +138,74 @@ void GLine::swap_a_and_b(){
 
 //removes all parts of this line inside the polygon
 //if a list is provided, any new lines that need to be created will be added there
-void GLine::trim_inside_polygon(vector<ofVec2f> pnts, vector<GLine>* list){
-   return trim_flexible_polygon(pnts, true, list);
+void GLine::trim_inside(vector<ofVec2f> pnts, vector<GLine>* list){
+   return trim_flexible(pnts, true, list);
 }
-
-//removes all parts of this line outside the polygon
-//if a list is provided, any new lines that need to be created will be added there
-void GLine::trim_outside_polygon(vector<ofVec2f> pnts, vector<GLine>* list){
-    trim_flexible_polygon(pnts, false, list);
-}
-void GLine::trim_outside_rect(ofRectangle rect, vector<GLine>* list){
+void GLine::trim_inside(ofRectangle rect, vector<GLine>* list){
     vector<ofVec2f> pnts;
     pnts.push_back(ofVec2f(rect.x, rect.y));
     pnts.push_back(ofVec2f(rect.x+rect.width, rect.y));
     pnts.push_back(ofVec2f(rect.x+rect.width, rect.y+rect.height));
     pnts.push_back(ofVec2f(rect.x, rect.y+rect.height));
-    trim_outside_polygon(pnts, list);
+    trim_inside(pnts, list);
+}
+
+//removes all parts of this line outside the polygon
+//if a list is provided, any new lines that need to be created will be added there
+void GLine::trim_outside(vector<ofVec2f> pnts, vector<GLine>* list){
+    trim_flexible(pnts, false, list);
+}
+void GLine::trim_outside(ofRectangle rect, vector<GLine>* list){
+    vector<ofVec2f> pnts;
+    pnts.push_back(ofVec2f(rect.x, rect.y));
+    pnts.push_back(ofVec2f(rect.x+rect.width, rect.y));
+    pnts.push_back(ofVec2f(rect.x+rect.width, rect.y+rect.height));
+    pnts.push_back(ofVec2f(rect.x, rect.y+rect.height));
+    trim_outside(pnts, list);
 }
 
 //this will trim inside or outside depending on what is passed in
-void GLine::trim_flexible_polygon(vector<ofVec2f> pnts, bool trim_inside, vector<GLine>* list){
+void GLine::trim_flexible(vector<ofVec2f> pnts, bool trim_inside, vector<GLine>* list){
+    if (is_locked){
+        return;
+    }
+    
+    //if A or B is exactly equal to one of the points, pull it a tiny bit towards the other
+    for (int i=0; i<pnts.size(); i++){
+        //cout<<"check "<<pnts[i]<<endl;
+        float pull_prc = 0.0001;
+        
+        bool a_on_line = check_point_on_line(a, pnts[i], pnts[(i+1)%pnts.size()]);
+        bool b_on_line = check_point_on_line(b, pnts[i], pnts[(i+1)%pnts.size()]);
+        
+        //if both points are on one of the border lines, this whole line is no good and should be removed
+        if (a_on_line && b_on_line){
+            skip_me = true;
+            return;
+        }
+        
+        //if just one of them, you can push it a tiny bit towards the other
+        if (a_on_line){
+            a = (1.0-pull_prc)*a + pull_prc * b;
+        }
+        if (b_on_line){
+            b = (1.0-pull_prc)*b + pull_prc * a;
+        }
+        
+    }
+    
     bool a_in = checkInPolygon(pnts, a.x, a.y);
     bool b_in = checkInPolygon(pnts, b.x, b.y);
     
     vector<ofVec2f> intersection_pnts, intersection_pnts_unordered;
     
+    bool testo_add_a = false;   //these are for trakcing down a bug and should be removed.
+    bool testo_add_b = false;
+    
     //if a is outside the zone that will be trimmed, treat it as the first intersection
     if ( (!a_in && trim_inside) || (a_in && !trim_inside) ){
         intersection_pnts.push_back(a);
+        testo_add_a = true;
     }
     
     //find all intersections with the shape
@@ -192,17 +238,28 @@ void GLine::trim_flexible_polygon(vector<ofVec2f> pnts, bool trim_inside, vector
     //if b is outside the zone that will be trimmed, treat it as the last intersection
     if ( (!b_in && trim_inside) ||  (b_in && !trim_inside)){
         intersection_pnts.push_back(b);
+        testo_add_b = true;
     }
     
     //if we have an odd number, something bad happened
     if (intersection_pnts.size() % 2 == 1){
         cout<<"SOMETHING BAD HAPPENED. intersections: "<<intersection_pnts.size()<<endl;
-        for (int i=0; i<intersection_pnts.size(); i++){
-            cout<<"  "<<intersection_pnts[i]<<endl;
-        }
+//        for (int i=0; i<intersection_pnts.size(); i++){
+//            cout<<"  "<<intersection_pnts[i]<<endl;
+//        }
+//        if (testo_add_a)    cout<<" added A"<<endl;
+//        if (testo_add_b)    cout<<" added B"<<endl;
+//        cout<<"  a: "<<a<<endl<<"  b: "<<b<<endl;
+//        cout<<"  a is in: "<<a_in<<endl;
+//        cout<<"  b is in: "<<b_in<<endl;
+        //cout<<"  trim inside: "<<trim_inside<<endl;
         
         //this is a hack and probably bad, but for now I'm just nixing the first point because the 1st and second often seem really close for some reason
-        intersection_pnts.erase(intersection_pnts.begin());
+        //intersection_pnts.erase(intersection_pnts.begin());
+        
+        //bail on this line
+        skip_me = true;
+        return;
     }
     
     //if we have no intersects, this line is entirely in the polygon and should be killed
@@ -239,8 +296,33 @@ bool GLine::checkInPolygon(vector<ofVec2f> p, float x, float y)
             c = !c;
     }
     return c;
+//    int i, j, c = 0;
+//    for (i = 0, j = p.size()-1; i < p.size(); j = i++) {
+//        if ((((p[i].y <= y) && (y <= p[j].y)) ||
+//             ((p[j].y <= y) && (y <= p[i].y))) &&
+//            (x < (p[j].x - p[i].x) * (y - p[i].y) / (p[j].y - p[i].y) + p[i].x))
+//            c = !c;
+//    }
+//    return c;
 }
 
+//https://stackoverflow.com/questions/7050186/find-if-point-lays-on-line-segment
+//answer from user2571999
+bool GLine::check_point_on_line(ofVec2f t, ofVec2f p1, ofVec2f p2){
+    float x1 = p1.x;
+    float y1 = p1.y;
+    float x2 = p2.x;
+    float y2 = p2.y;
+    
+    float AB = sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+    float AP = sqrt((t.x-x1)*(t.x-x1)+(t.y-y1)*(t.y-y1));
+    float PB = sqrt((x2-t.x)*(x2-t.x)+(y2-t.y)*(y2-t.y));
+    if(AB == AP + PB){
+        return true;
+    }
+    
+    return false;
+}
 
 
 //These functions have been depricated

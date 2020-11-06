@@ -234,6 +234,9 @@ vector<ofVec2f> ofxGCode::get_rounded_pnts(float x, float y, float w, float h, f
     return pnts;
 }
 
+void ofxGCode::circle(ofVec2f center, float size){
+    circle(center.x, center.y, size);
+}
 void ofxGCode::circle(float x, float y, float size){
     float angle_step =(TWO_PI/(float)circle_resolution);
     begin_shape();
@@ -540,6 +543,13 @@ void ofxGCode::sort(){
     }
 }
 
+//sets all current lines so they cannot be trimmed or set as outwards only
+void  ofxGCode::lock_lines(){
+    for (int i=0; i<lines.size(); i++){
+        lines[i].set_locked(true);
+    }
+}
+
 float ofxGCode::measureTransitDistance(){
     float distance = 0.0;
     
@@ -551,13 +561,13 @@ float ofxGCode::measureTransitDistance(){
 }
 
 //takes any vector of lines and returns a new vector where the spaces inside the polygon have been trimmed
-vector<GLine> ofxGCode::trim_lines_inside_polygon(vector<GLine> lines, vector<ofVec2f> bounds){
+vector<GLine> ofxGCode::trim_lines_inside(vector<GLine> lines, vector<ofVec2f> bounds){
     vector<GLine> output;
     
     //go through each line and try to trim it
     for (int i=0; i<lines.size(); i++){
         //trim it, adding any extra lines generated to the output
-        lines[i].trim_inside_polygon(bounds, &output);
+        lines[i].trim_inside(bounds, &output);
         //then if this line is still valid, add it as well
         if (!lines[i].skip_me){
             output.push_back(lines[i]);
@@ -568,31 +578,31 @@ vector<GLine> ofxGCode::trim_lines_inside_polygon(vector<GLine> lines, vector<of
 }
 
 //trims the current list of lines, removing any points inside the given polygon
-void ofxGCode::trim_inside_polygon(vector<ofVec2f> bounds){
-    lines = trim_lines_inside_polygon(lines, bounds);
+void ofxGCode::trim_inside(vector<ofVec2f> bounds){
+    lines = trim_lines_inside(lines, bounds);
 }
 
 //helper function for trimming rectangles
-vector<GLine> ofxGCode::trim_lines_inside_box(vector<GLine> lines, ofRectangle bounds){
+vector<GLine> ofxGCode::trim_lines_inside(vector<GLine> lines, ofRectangle bounds){
     vector<ofVec2f> pnts;
     pnts.push_back(ofVec2f(bounds.x, bounds.y));
     pnts.push_back(ofVec2f(bounds.x+bounds.width, bounds.y));
     pnts.push_back(ofVec2f(bounds.x+bounds.width, bounds.y+bounds.height));
     pnts.push_back(ofVec2f(bounds.x, bounds.y+bounds.height));
-    return trim_lines_inside_polygon(lines, pnts);
+    return trim_lines_inside(lines, pnts);
 }
-void ofxGCode::trim_inside_box(ofRectangle bounds){
-    lines = trim_lines_inside_box(lines, bounds);
+void ofxGCode::trim_inside(ofRectangle bounds){
+    lines = trim_lines_inside(lines, bounds);
 }
 
 //takes any vector of lines and returns a new vector where any lines outside the shape have been removed
-vector<GLine> ofxGCode::trim_lines_outside_polygon(vector<GLine> lines, vector<ofVec2f> bounds){
+vector<GLine> ofxGCode::trim_lines_outside(vector<GLine> lines, vector<ofVec2f> bounds){
     vector<GLine> output;
     
     //go through each line and try to trim it
     for (int i=0; i<lines.size(); i++){
         //trim it, adding any extra lines generated to the output
-        lines[i].trim_outside_polygon(bounds, &output);
+        lines[i].trim_outside(bounds, &output);
         //then if this line is still valid, add it as well
         if (!lines[i].skip_me){
             output.push_back(lines[i]);
@@ -603,21 +613,21 @@ vector<GLine> ofxGCode::trim_lines_outside_polygon(vector<GLine> lines, vector<o
 }
 
 //trims the current list of lines, removing any points outside the given polygon
-void ofxGCode::trim_outside_polygon(vector<ofVec2f> bounds){
-    lines = trim_lines_outside_polygon(lines, bounds);
+void ofxGCode::trim_outside(vector<ofVec2f> bounds){
+    lines = trim_lines_outside(lines, bounds);
 }
 
 //helper function for trimming rectangles
-vector<GLine> ofxGCode::trim_lines_outside_box(vector<GLine> lines, ofRectangle bounds){
+vector<GLine> ofxGCode::trim_lines_outside(vector<GLine> lines, ofRectangle bounds){
     vector<ofVec2f> pnts;
     pnts.push_back(ofVec2f(bounds.x, bounds.y));
     pnts.push_back(ofVec2f(bounds.x+bounds.width, bounds.y));
     pnts.push_back(ofVec2f(bounds.x+bounds.width, bounds.y+bounds.height));
     pnts.push_back(ofVec2f(bounds.x, bounds.y+bounds.height));
-    return trim_lines_outside_polygon(lines, pnts);
+    return trim_lines_outside(lines, pnts);
 }
-void ofxGCode::trim_outside_box(ofRectangle bounds){
-    lines = trim_lines_outside_box(lines, bounds);
+void ofxGCode::trim_outside(ofRectangle bounds){
+    lines = trim_lines_outside(lines, bounds);
 }
 
 
@@ -626,33 +636,35 @@ void ofxGCode::trim_outside_box(ofRectangle bounds){
 void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
     
     for (int i=0; i<lines.size(); i++){
-        bool a_inside = safe_area.inside(lines[i].a);
-        bool b_inside = safe_area.inside(lines[i].b);
-        //if both sides are in the safe area, do nothing. We can flip this line if we need to
-        if (a_inside && b_inside){
-            lines[i].do_not_reverse = false;
-        }
-        
-        //if only A is inside, keep the order but make sure it doesn't get flipped
-        else if (a_inside && !b_inside){
-            lines[i].do_not_reverse = true;
-        }
-        
-        //if only B is inside, flip it and make sure it does not get flipped again
-        else if (b_inside && !a_inside){
-            lines[i].swap_a_and_b();
-            lines[i].do_not_reverse = true;
-        }
-        
-        //if neither is inside, select the point closest to the center and have that be A
-        else{
-            ofVec2f center;
-            center.x = (safe_area.x + safe_area.x+safe_area.width)/2;
-            center.y = (safe_area.y + safe_area.y+safe_area.height)/2;
-            if (center.squareDistance(lines[i].a) > center.squareDistance(lines[i].b)){
-                lines[i].swap_a_and_b();
+        if (!lines[i].is_locked){
+            bool a_inside = safe_area.inside(lines[i].a);
+            bool b_inside = safe_area.inside(lines[i].b);
+            //if both sides are in the safe area, do nothing. We can flip this line if we need to
+            if (a_inside && b_inside){
+                lines[i].do_not_reverse = false;
             }
-            lines[i].do_not_reverse = true;
+            
+            //if only A is inside, keep the order but make sure it doesn't get flipped
+            else if (a_inside && !b_inside){
+                lines[i].do_not_reverse = true;
+            }
+            
+            //if only B is inside, flip it and make sure it does not get flipped again
+            else if (b_inside && !a_inside){
+                lines[i].swap_a_and_b();
+                lines[i].do_not_reverse = true;
+            }
+            
+            //if neither is inside, select the point closest to the center and have that be A
+            else{
+                ofVec2f center;
+                center.x = (safe_area.x + safe_area.x+safe_area.width)/2;
+                center.y = (safe_area.y + safe_area.y+safe_area.height)/2;
+                if (center.squareDistance(lines[i].a) > center.squareDistance(lines[i].b)){
+                    lines[i].swap_a_and_b();
+                }
+                lines[i].do_not_reverse = true;
+            }
         }
     }
     
@@ -678,17 +690,17 @@ bool ofxGCode::checkInPolygon(vector<ofVec2f> p, float x, float y)
 
 //these are depricated
 void ofxGCode::clip_outside(ofRectangle bounding_box){
-    cout<<"clip_outside is depricated. Use trim_outside_box"<<endl;
+    cout<<"clip_outside is depricated. Use trim_outside"<<endl;
 }
 
 //this would be more efficient if you used Trammel's clipping class
 //this thing is wildly inefficient
 void ofxGCode::clip_inside(ofRectangle bounding_box){
-    cout<<"clip_inside is depricated. Use trim_inside_box"<<endl;
+    cout<<"clip_inside is depricated. Use trim_inside"<<endl;
 }
 
 void ofxGCode::clip_inside(vector<ofVec2f> bounds){
-    cout<<"clip_inside is depricated. Use trim_inside_polygon"<<endl;
+    cout<<"clip_inside is depricated. Use trim_inside"<<endl;
 }
 
 
