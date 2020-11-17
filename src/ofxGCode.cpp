@@ -250,6 +250,18 @@ void ofxGCode::circle(float x, float y, float size){
     }
     end_shape(true);
 }
+vector<ofVec2f> ofxGCode::get_circle_pnts(ofVec2f center, float size, int steps){
+    float angle_step = TWO_PI/steps;
+    vector<ofVec2f> pnts;
+    for (int i=0; i<steps; i++){
+        float angle = angle_step * i;
+        ofVec2f pos;
+        pos.x = center.x + cos(angle) * size;
+        pos.y = center.y + sin(angle) * size;
+        pnts.push_back(pos);
+    }
+    return pnts;
+}
 
 //Emulating the begin/end shape functionality
 void ofxGCode::begin_shape(){

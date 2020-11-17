@@ -36,6 +36,7 @@ public:
     
     void circle(ofVec2f center, float size);
     void circle(float x, float y, float size);
+    static vector<ofVec2f> get_circle_pnts(ofVec2f center, float size, int steps);
     
     void begin_shape();
     void vertex(ofVec2f p);
