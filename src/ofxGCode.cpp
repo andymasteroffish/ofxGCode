@@ -319,6 +319,13 @@ void ofxGCode::line(float x1, float y1, float x2, float y2){
     lines.push_back(line);
 }
 
+//adds a vector of GLines
+void ofxGCode::add_lines(vector<GLine> new_lines){
+    for (int i=0; i<new_lines.size(); i++){
+        line(new_lines[i]);
+    }
+}
+
 //Thick lines are just multiple lines, eenly spaced
 void ofxGCode::thick_line(float x1, float y1, float x2, float y2, float spacing, int layers){
     thick_line(ofVec2f(x1,y1), ofVec2f(x2,y2), spacing, layers);

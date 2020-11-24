@@ -49,6 +49,8 @@ public:
     void line(ofVec2f a, ofVec2f b);
     void line(float x1, float y1, float x2, float y2);
     
+    void add_lines(vector<GLine> new_lines);
+    
     void thick_line(float x1, float y1, float x2, float y2, float spacing, int layers);
     void thick_line(ofVec2f base_a, ofVec2f base_b, float spacing, int layers);
     
