@@ -674,16 +674,33 @@ void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
                 lines[i].do_not_reverse = true;
             }
             
-            //if neither is inside, select the point closest to the center and have that be A
+            //if neither is inside, see if the center point of the line is inside and attempt to split it
             else{
-                ofVec2f center;
-                center.x = (safe_area.x + safe_area.x+safe_area.width)/2;
-                center.y = (safe_area.y + safe_area.y+safe_area.height)/2;
-                if (center.squareDistance(lines[i].a) > center.squareDistance(lines[i].b)){
-                    lines[i].swap_a_and_b();
+                ofVec2f mid = lines[i].a*0.5 + lines[i].b*0.5;
+                bool mid_inside = safe_area.inside(mid);
+                //if midpoint is inside, split it!
+                if (mid_inside){
+                    //make a new line
+                    GLine new_line = GLine(mid, lines[i].b);
+                    lines.push_back(new_line);
+                    //trim this line
+                    lines[i].b = mid;
+                    //push i back so we re-evaluate this line
+                    i--;
                 }
-                lines[i].do_not_reverse = true;
+                //otherwise, give up. select the point closest to the center and have that be A
+                else{
+                    ofVec2f center;
+                    center.x = (safe_area.x + safe_area.x+safe_area.width)/2;
+                    center.y = (safe_area.y + safe_area.y+safe_area.height)/2;
+                    if (center.squareDistance(lines[i].a) > center.squareDistance(lines[i].b)){
+                        lines[i].swap_a_and_b();
+                    }
+                    lines[i].do_not_reverse = true;
+                }
             }
+            
+            
         }
     }
     
