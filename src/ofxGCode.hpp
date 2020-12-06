@@ -85,6 +85,11 @@ public:
     //any lines outside of this bound will be forced to draw from the center out. 
     void set_outwards_only_bounds(ofRectangle safe_area);
     
+    //some tools for saving/loading from files
+    static vector<vector<ofVec2f>> load_outlines(string file_path);
+    static vector<GLine> load_lines(string file_path);
+    void save_lines(string file_path);
+    
     //code is a modified version of code by Randolph Franklin
     //from http://paulbourke.net/geometry/insidepoly/
     bool checkInPolygon(vector<ofVec2f> p, float x, float y);

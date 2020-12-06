@@ -707,6 +707,95 @@ void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
 }
 
 //--------------------------------------------------------------
+vector<vector<ofVec2f>> ofxGCode::load_outlines(string file_path){
+    vector<vector<ofVec2f>> outlines;
+    
+    ofFile file(file_path);
+    
+    if(!file.exists()){
+        cout<<"The outline file " << file_path << " is missing"<<endl;
+        return outlines;
+    }
+    ofBuffer buffer(file);
+    
+    //Read file line by line
+    vector<ofVec2f> cur_outline;
+    for (ofBuffer::Line it = buffer.getLines().begin(), end = buffer.getLines().end(); it != end; ++it) {
+        string line = *it;
+        //Split line into strings
+        vector<string> words = ofSplitString(line, ",");
+
+        if (words.size()>0){
+
+            //using # to mark the start of a new shape
+            if (words[0]=="#"){
+                if (cur_outline.size() > 1){
+                    outlines.push_back(cur_outline);
+                    cur_outline.clear();
+                }
+            }
+            //there should be two words
+            else if (words.size()==2){
+                ofVec2f pnt;
+                pnt.x = ofToFloat(words[0]);
+                pnt.y = ofToFloat(words[1]);
+                cur_outline.push_back(pnt);
+            }
+        }
+
+    }
+    
+    //add the last shape if there's anything there
+    cout<<cur_outline.size()<<endl;
+    if (cur_outline.size() > 1){
+        outlines.push_back(cur_outline);
+    }
+    
+    return outlines;
+}
+
+//--------------------------------------------------------------
+vector<GLine> ofxGCode::load_lines(string file_path){
+    vector<GLine> new_lines;
+    
+    ofFile file(file_path);
+    
+    if(!file.exists()){
+        cout<<"The file " << file_path << " is missing"<<endl;
+        return new_lines;
+    }
+    ofBuffer buffer(file);
+    
+    //Read file line by line
+    for (ofBuffer::Line it = buffer.getLines().begin(), end = buffer.getLines().end(); it != end; ++it) {
+        string line = *it;
+        //Split line into strings
+        vector<string> words = ofSplitString(line, ",");
+        
+        if (words.size()==4){
+            GLine line;
+            line.a.x =  ofToFloat(words[0]);
+            line.a.y =  ofToFloat(words[1]);
+            line.b.x =  ofToFloat(words[2]);
+            line.b.y =  ofToFloat(words[3]);
+            new_lines.push_back(line);
+        }
+        
+    }
+    return new_lines;
+    
+}
+
+//--------------------------------------------------------------
+void ofxGCode::save_lines(string file_path){
+    ofFile myTextFile;
+    myTextFile.open(file_path,ofFile::WriteOnly);
+    for (int i=0; i<lines.size(); i++){
+        myTextFile<<lines[i].a.x<<","<<lines[i].a.y<<","<<lines[i].b.x<<","<<lines[i].b.y<<endl;
+    }
+}
+
+//--------------------------------------------------------------
 //code is a modified version of code by Randolph Franklin
 //from http://paulbourke.net/geometry/insidepoly/
 bool ofxGCode::checkInPolygon(vector<ofVec2f> p, float x, float y)
