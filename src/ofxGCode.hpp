@@ -85,6 +85,9 @@ public:
     //any lines outside of this bound will be forced to draw from the center out. 
     void set_outwards_only_bounds(ofRectangle safe_area);
     
+    //moving the lines
+    void translate(float x, float y);
+    
     //some tools for saving/loading from files
     static vector<vector<ofVec2f>> load_outlines(string file_path);
     static vector<GLine> load_lines(string file_path);

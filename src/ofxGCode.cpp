@@ -707,6 +707,18 @@ void ofxGCode::set_outwards_only_bounds(ofRectangle safe_area){
 }
 
 //--------------------------------------------------------------
+void ofxGCode::translate(float x, float y){
+    for (int i=0; i<lines.size(); i++){
+        if (!lines[i].is_locked){
+            lines[i].a.x += x;
+            lines[i].a.y += y;
+            lines[i].b.x += x;
+            lines[i].b.y += y;
+        }
+    }
+}
+
+//--------------------------------------------------------------
 vector<vector<ofVec2f>> ofxGCode::load_outlines(string file_path){
     vector<vector<ofVec2f>> outlines;
     
