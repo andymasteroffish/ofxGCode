@@ -136,6 +136,40 @@ void GLine::swap_a_and_b(){
     b.set(temp);
 }
 
+//returns a box around the line
+vector<ofVec2f> GLine::get_bounds(float padding){
+    vector<ofVec2f> bounds;
+    
+    
+    float angle = atan2(b.y-a.y, b.x-a.x);
+    float tan_angle = angle + PI/2;
+    
+    ofVec2f push_a = ofVec2f(a);
+    push_a.x -= cos(angle) * padding;
+    push_a.y -= sin(angle) * padding;
+    
+    ofVec2f push_b = ofVec2f(b);
+    push_b.x += cos(angle) * padding;
+    push_b.y += sin(angle) * padding;
+    
+    bounds.push_back(push_a);
+    bounds.push_back(push_a);
+    bounds.push_back(push_b);
+    bounds.push_back(push_b);
+    
+    bounds[0].x += cos(tan_angle) * padding;
+    bounds[0].y += sin(tan_angle) * padding;
+    bounds[1].x -= cos(tan_angle) * padding;
+    bounds[1].y -= sin(tan_angle) * padding;
+    
+    bounds[2].x -= cos(tan_angle) * padding;
+    bounds[2].y -= sin(tan_angle) * padding;
+    bounds[3].x += cos(tan_angle) * padding;
+    bounds[3].y += sin(tan_angle) * padding;
+    
+    return bounds;
+}
+
 //removes all parts of this line inside the polygon
 //if a list is provided, any new lines that need to be created will be added there
 void GLine::trim_inside(vector<ofVec2f> pnts, vector<GLine>* list){

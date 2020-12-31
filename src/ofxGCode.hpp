@@ -43,7 +43,7 @@ public:
     void vertex(float x, float y);
     void end_shape(bool close);
     
-    void polygon(vector<ofVec2f> pnts);
+    void polygon(vector<ofVec2f> pnts, bool close_shape = true);
     
     void line(GLine _line);
     void line(ofVec2f a, ofVec2f b);

@@ -34,6 +34,8 @@ public:
     
     void swap_a_and_b();
     
+    vector<ofVec2f> get_bounds(float padding);
+    
     //trimming the line
     void trim_inside(ofRectangle rect, vector<GLine>* list = NULL);
     void trim_inside(vector<ofVec2f> pnts, vector<GLine>* list = NULL);

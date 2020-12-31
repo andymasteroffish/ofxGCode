@@ -287,12 +287,12 @@ void ofxGCode::end_shape(bool close){
 }
 
 //drawing polygone from points
-void ofxGCode::polygon(vector<ofVec2f> pnts){
+void ofxGCode::polygon(vector<ofVec2f> pnts, bool close_shape){
     begin_shape();
     for (int i=0; i<pnts.size(); i++){
         vertex(pnts[i]);
     }
-    end_shape(true);
+    end_shape(close_shape);
 }
 
 //Lines
