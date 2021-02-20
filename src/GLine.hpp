@@ -26,6 +26,8 @@ public:
     
     vector<GLine> get_segments(int num_segments);
     
+    float get_length();
+    
     bool intersects(GLine other);
     bool intersects(GLine other, ofVec2f &intersect_pnt);
     bool clip_to_other_line(GLine other);

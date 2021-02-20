@@ -80,6 +80,10 @@ vector<GLine> GLine::get_segments(int num_segments){
     return lines;
 }
 
+float GLine::get_length(){
+    return a.distance(b);
+}
+
 //returns true if line intersects
 bool GLine::intersects(GLine other){
     ofPoint out;

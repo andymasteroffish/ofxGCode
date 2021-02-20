@@ -353,6 +353,35 @@ void ofxGCode::thick_line(ofVec2f base_a, ofVec2f base_b, float spacing, int lay
     }
 }
 
+vector<ofVec2f> ofxGCode::resample_lines(vector<ofVec2f> src_pnts, float sample_dist, bool close_shape, int steps_per_point){
+    vector<ofVec2f> new_pnts;
+    int end_index = close_shape ? src_pnts.size() : src_pnts.size()-1;
+    
+    float cur_dist = 0;
+    ofVec2f prev_pos = ofVec2f(src_pnts[0]);
+    new_pnts.push_back(src_pnts[0]);
+    
+    for (int i=0; i<end_index; i++){
+        ofVec2f a = src_pnts[i];
+        ofVec2f b = src_pnts[ (i+1)%src_pnts.size()];
+        
+        for (int k=0; k<=steps_per_point; k++){
+            float prc = (float)k / (float)steps_per_point;
+            ofVec2f pnt = (1.0-prc)*a + prc*b;
+            cur_dist += ofDist(prev_pos.x, prev_pos.y, pnt.x, pnt.y);
+            if (cur_dist >= sample_dist){
+                new_pnts.push_back(pnt);
+                cur_dist -= sample_dist;
+            }
+            prev_pos = ofVec2f(pnt);
+        }
+    }
+    
+    return new_pnts;
+    
+    
+}
+
 //Bezier Curves
 void ofxGCode::bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps){
     vector<ofVec2f> pnts = get_bezier_pnts(p1, c1, c2, p2, steps);
@@ -649,6 +678,23 @@ void ofxGCode::trim_outside(ofRectangle bounds){
     lines = trim_lines_outside(lines, bounds);
 }
 
+//takes a list of lines and rmeoves any lines that intersect a satic line
+vector<GLine> ofxGCode::trim_intersecting_lines(vector<GLine> lines_to_trim, vector<GLine> static_lines){
+    vector<GLine> val;
+    for (int i=0; i<lines_to_trim.size(); i++){
+        bool can_add = true;
+        for (int k=0; k<static_lines.size(); k++){
+            if (lines_to_trim[i].intersects(static_lines[k])){
+                can_add = false;
+                break;
+            }
+        }
+        if (can_add){
+            val.push_back(lines_to_trim[i]);
+        }
+    }
+    return  val;
+}
 
 //--------------------------------------------------------------
 //any lines outside of this bounds will be forced to draw from the center out.
@@ -822,6 +868,27 @@ bool ofxGCode::checkInPolygon(vector<ofVec2f> p, float x, float y)
     return c;
 }
 
+//--------------------------------------------------------------
+//0-top left, 1-top right, 2-bottom right, 3-bottom left
+ofVec2f ofxGCode::perspective_warp(ofVec2f orig_pnt, ofRectangle src_bounds, ofVec2f new_bounds[4], float x_curve, float y_curve){
+    
+    //get the percentage of the x and y in the original box
+    float x_prc = (orig_pnt.x-src_bounds.x) / src_bounds.width;
+    float y_prc = (orig_pnt.y-src_bounds.y) / src_bounds.height;
+    
+    x_prc = powf(x_prc, x_curve);
+    y_prc = powf(y_prc, y_curve);
+    
+    //now move along the top and bottom of the new shape to the same x_prc
+    ofVec2f top_pnt = (1.0-x_prc)*new_bounds[0] + x_prc*new_bounds[1];
+    ofVec2f bot_pnt = (1.0-x_prc)*new_bounds[3] + x_prc*new_bounds[2];
+    
+    //now lerp between those based on the y
+    ofVec2f new_pos = (1.0-y_prc)*top_pnt + y_prc*bot_pnt;
+    
+    
+    return new_pos;
+}
 
 
 

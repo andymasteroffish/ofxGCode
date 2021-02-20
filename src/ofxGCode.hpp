@@ -54,6 +54,8 @@ public:
     void thick_line(float x1, float y1, float x2, float y2, float spacing, int layers);
     void thick_line(ofVec2f base_a, ofVec2f base_b, float spacing, int layers);
     
+    static vector<ofVec2f> resample_lines(vector<ofVec2f> src_pnts, float sample_dist, bool close_shape, int steps_per_point=100);
+    
     void bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps = 50);
     static vector<ofVec2f> get_bezier_pnts(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps);
     
@@ -81,6 +83,7 @@ public:
     static vector<GLine> trim_lines_outside(vector<GLine> lines, ofRectangle bounds);
     void trim_outside(ofRectangle bounds);
     
+    static vector<GLine> trim_intersecting_lines(vector<GLine> lines_to_trim, vector<GLine> static_lines);
     
     //any lines outside of this bound will be forced to draw from the center out. 
     void set_outwards_only_bounds(ofRectangle safe_area);
@@ -95,7 +98,11 @@ public:
     
     //code is a modified version of code by Randolph Franklin
     //from http://paulbourke.net/geometry/insidepoly/
-    bool checkInPolygon(vector<ofVec2f> p, float x, float y);
+    //bool checkInPolygon(vector<ofVec2f> p, float x, float y);
+    static bool checkInPolygon(vector<ofVec2f> p, float x, float y);
+    
+    //other helpers
+    static ofVec2f perspective_warp(ofVec2f orig_pnt, ofRectangle src_bounds, ofVec2f new_bounds[4], float x_curve = 1, float y_curve = 1);
     
     //these have been depricated
     void clip_outside(ofRectangle bounding_box);
