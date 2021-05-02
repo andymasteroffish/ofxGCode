@@ -281,19 +281,7 @@ void GLine::trim_flexible(vector<ofVec2f> pnts, bool trim_inside, vector<GLine>*
     
     //if we have an odd number, something bad happened
     if (intersection_pnts.size() % 2 == 1){
-        cout<<"SOMETHING BAD HAPPENED. intersections: "<<intersection_pnts.size()<<endl;
-//        for (int i=0; i<intersection_pnts.size(); i++){
-//            cout<<"  "<<intersection_pnts[i]<<endl;
-//        }
-//        if (testo_add_a)    cout<<" added A"<<endl;
-//        if (testo_add_b)    cout<<" added B"<<endl;
-//        cout<<"  a: "<<a<<endl<<"  b: "<<b<<endl;
-//        cout<<"  a is in: "<<a_in<<endl;
-//        cout<<"  b is in: "<<b_in<<endl;
-        //cout<<"  trim inside: "<<trim_inside<<endl;
-        
-        //this is a hack and probably bad, but for now I'm just nixing the first point because the 1st and second often seem really close for some reason
-        //intersection_pnts.erase(intersection_pnts.begin());
+        //cout<<"SOMETHING BAD HAPPENED. intersections: "<<intersection_pnts.size()<<endl;
         
         //bail on this line
         skip_me = true;

@@ -21,6 +21,7 @@ void ofxGCode::setup(float _pixels_per_inch){
     show_path_with_color = false;
     show_do_not_reverse = false;
     demo_col.set(0,0,0);
+    demo_fade_prc = 0.75;
 }
 
 void ofxGCode::set_size(int w, int h){
@@ -42,7 +43,7 @@ void ofxGCode::draw(int max_lines_to_show){
         //the line
         GLine line = lines[i];
         
-        ofSetColor(demo_col.r, demo_col.g, demo_col.b, 255 * 0.75);
+        ofSetColor(demo_col.r, demo_col.g, demo_col.b, 255 * demo_fade_prc);
         
         //fading between colors to show order
         if (show_path_with_color){
@@ -378,8 +379,19 @@ vector<ofVec2f> ofxGCode::resample_lines(vector<ofVec2f> src_pnts, float sample_
     }
     
     return new_pnts;
+}
+
+vector<GLine> ofxGCode::pnts_to_lines(vector<ofVec2f> pnts, bool close){
+    vector<GLine> new_lines;
+    for (int i=0; i<pnts.size()-1; i++){
+        new_lines.push_back(GLine(pnts[i], pnts[i+1]));
+    }
     
+    if (close){
+        new_lines.push_back(GLine(pnts[pnts.size()-1], pnts[0]));
+    }
     
+    return new_lines;
 }
 
 //Bezier Curves
@@ -543,7 +555,7 @@ void ofxGCode::sort(){
     //go through finding the closest end point
     ofVec2f cur_pnt = ofVec2f();
     while (line_groups.size() > 0){
-        int close_id;
+        int close_id=0;
         float close_dist_sq = 9999999;
         bool need_to_flip = false;
         
@@ -587,7 +599,10 @@ void ofxGCode::sort(){
         }
         
         //remove it from unsorted
+        //cout<<"remove "<<close_id<<" out of "<<line_groups.size()<<endl;
+        //if (close_id <  line_groups.size()){
         line_groups.erase(line_groups.begin() + close_id);
+        //}
     }
 }
 
@@ -595,6 +610,12 @@ void ofxGCode::sort(){
 void  ofxGCode::lock_lines(){
     for (int i=0; i<lines.size(); i++){
         lines[i].set_locked(true);
+    }
+}
+
+void  ofxGCode::unlock_lines(){
+    for (int i=0; i<lines.size(); i++){
+        lines[i].set_locked(false);
     }
 }
 
@@ -694,6 +715,19 @@ vector<GLine> ofxGCode::trim_intersecting_lines(vector<GLine> lines_to_trim, vec
         }
     }
     return  val;
+}
+
+void ofxGCode::demo_trim(float x1, float y1, float x2, float y2){
+    //first trim in the box
+    ofRectangle box;
+    box.x = x1;
+    box.y = y1;
+    box.width = x2-x1;
+    box.height = y2-y1;
+    
+    trim_outside(box);
+    
+    translate(-x1, -y1);
 }
 
 //--------------------------------------------------------------

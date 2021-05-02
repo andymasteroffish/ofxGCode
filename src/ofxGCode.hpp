@@ -56,6 +56,8 @@ public:
     
     static vector<ofVec2f> resample_lines(vector<ofVec2f> src_pnts, float sample_dist, bool close_shape, int steps_per_point=100);
     
+    static vector<GLine> pnts_to_lines(vector<ofVec2f> pnts, bool close);
+    
     void bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps = 50);
     static vector<ofVec2f> get_bezier_pnts(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps);
     
@@ -68,6 +70,7 @@ public:
     
     void sort();
     
+    void unlock_lines();
     void lock_lines();
     
     float measureTransitDistance();
@@ -84,6 +87,10 @@ public:
     void trim_outside(ofRectangle bounds);
     
     static vector<GLine> trim_intersecting_lines(vector<GLine> lines_to_trim, vector<GLine> static_lines);
+    
+    //used to demo an area by trimming to a box and translating to 0,0
+    //I almost always want to do this based on two points, so those are the arguments
+    void demo_trim(float x1, float y1, float x2, float y2);
     
     //any lines outside of this bound will be forced to draw from the center out. 
     void set_outwards_only_bounds(ofRectangle safe_area);
@@ -131,7 +138,7 @@ public:
     bool show_do_not_reverse;
     
     ofColor demo_col;
-    
+    float demo_fade_prc;
     
 };
 
