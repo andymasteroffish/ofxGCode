@@ -37,6 +37,7 @@ void ofxGCode::clear(){
 void ofxGCode::draw(int max_lines_to_show){
     
     int draw_count = 0;
+    if (max_lines_to_show <= 0) max_lines_to_show = lines.size();
     
     int end_index = MIN(max_lines_to_show, lines.size());
     for (int i=0; i<end_index; i++){
@@ -413,6 +414,7 @@ vector<ofVec2f> ofxGCode::get_bezier_pnts(ofVec2f p1, ofVec2f c1, ofVec2f c2, of
     return pnts;
 }
 
+//be aware that this tool may no longer work
 void ofxGCode::dot(float x, float y){
     line(x,y,x,y);
 }
@@ -801,6 +803,28 @@ void ofxGCode::translate(float x, float y){
 }
 
 //--------------------------------------------------------------
+//0-top left, 1-top right, 2-bottom right, 3-bottom left
+ofVec2f ofxGCode::perspective_warp(ofVec2f orig_pnt, ofRectangle src_bounds, ofVec2f new_bounds[4], float x_curve, float y_curve){
+    
+    //get the percentage of the x and y in the original box
+    float x_prc = (orig_pnt.x-src_bounds.x) / src_bounds.width;
+    float y_prc = (orig_pnt.y-src_bounds.y) / src_bounds.height;
+    
+    x_prc = powf(x_prc, x_curve);
+    y_prc = powf(y_prc, y_curve);
+    
+    //now move along the top and bottom of the new shape to the same x_prc
+    ofVec2f top_pnt = (1.0-x_prc)*new_bounds[0] + x_prc*new_bounds[1];
+    ofVec2f bot_pnt = (1.0-x_prc)*new_bounds[3] + x_prc*new_bounds[2];
+    
+    //now lerp between those based on the y
+    ofVec2f new_pos = (1.0-y_prc)*top_pnt + y_prc*bot_pnt;
+    
+    
+    return new_pos;
+}
+
+//--------------------------------------------------------------
 vector<vector<ofVec2f>> ofxGCode::load_outlines(string file_path){
     vector<vector<ofVec2f>> outlines;
     
@@ -904,44 +928,7 @@ bool ofxGCode::checkInPolygon(vector<ofVec2f> p, float x, float y)
     return c;
 }
 
-//--------------------------------------------------------------
-//0-top left, 1-top right, 2-bottom right, 3-bottom left
-ofVec2f ofxGCode::perspective_warp(ofVec2f orig_pnt, ofRectangle src_bounds, ofVec2f new_bounds[4], float x_curve, float y_curve){
-    
-    //get the percentage of the x and y in the original box
-    float x_prc = (orig_pnt.x-src_bounds.x) / src_bounds.width;
-    float y_prc = (orig_pnt.y-src_bounds.y) / src_bounds.height;
-    
-    x_prc = powf(x_prc, x_curve);
-    y_prc = powf(y_prc, y_curve);
-    
-    //now move along the top and bottom of the new shape to the same x_prc
-    ofVec2f top_pnt = (1.0-x_prc)*new_bounds[0] + x_prc*new_bounds[1];
-    ofVec2f bot_pnt = (1.0-x_prc)*new_bounds[3] + x_prc*new_bounds[2];
-    
-    //now lerp between those based on the y
-    ofVec2f new_pos = (1.0-y_prc)*top_pnt + y_prc*bot_pnt;
-    
-    
-    return new_pos;
-}
 
-
-
-//these are depricated
-void ofxGCode::clip_outside(ofRectangle bounding_box){
-    cout<<"clip_outside is depricated. Use trim_outside"<<endl;
-}
-
-//this would be more efficient if you used Trammel's clipping class
-//this thing is wildly inefficient
-void ofxGCode::clip_inside(ofRectangle bounding_box){
-    cout<<"clip_inside is depricated. Use trim_inside"<<endl;
-}
-
-void ofxGCode::clip_inside(vector<ofVec2f> bounds){
-    cout<<"clip_inside is depricated. Use trim_inside"<<endl;
-}
 
 
 
