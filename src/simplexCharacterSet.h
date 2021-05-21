@@ -12,6 +12,8 @@
 */
 
 //THIS IS FOR OFXHERSHEY FONT
+//This file comes from Tobias Zimmer's ofxHersheyFont repo
+//https://github.com/tobiaszimmer/ofxHersheyFont
 
 int simplex[95][112] = {
 	0,16, /* Ascii 32 */

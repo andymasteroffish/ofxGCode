@@ -6,6 +6,8 @@
 
 #include "GLine.hpp"
 
+//--- Constructors
+
 GLine::GLine(){
     a.x = 0;
     a.y = 0;
@@ -30,12 +32,10 @@ GLine::GLine(float x1, float y1, float x2, float y2){
     is_locked = false;
 }
 
+//--- Set functions
+
 void GLine::set(ofVec2f _a, ofVec2f _b){
     set(_a.x, _a.y, _b.x, _b.y);
-}
-
-void GLine::set(GLine other){
-    set(other.a, other.b);
 }
 
 void GLine::set(float x1, float y1, float x2, float y2){
@@ -45,17 +45,15 @@ void GLine::set(float x1, float y1, float x2, float y2){
     b.y = y2;
 }
 
+void GLine::set(GLine other){
+    set(other.a, other.b);
+}
+
 void GLine::set_locked(bool val){
     is_locked = val;
 }
-//this does not change the current line, but returns a new one
-GLine GLine::get_offset(ofVec2f offset){
-    GLine line;
-    line.set(a,b);
-    line.a += offset;
-    line.b += offset;
-    return line;
-}
+
+//--- Drawing
 
 void GLine::draw(){
     ofDrawLine(a,b);
@@ -64,6 +62,18 @@ void GLine::draw(){
     if (a == b){
         ofDrawCircle(a.x, a.y, 0.5);
     }
+}
+
+
+//--- Utilities
+
+//returns a new line with the same length and angle of the current line, but offset along X and Y. This will not change the line it is called on
+GLine GLine::get_offset(ofVec2f offset){
+    GLine line;
+    line.set(a,b);
+    line.a += offset;
+    line.b += offset;
+    return line;
 }
 
 vector<GLine> GLine::get_segments(int num_segments){
@@ -82,62 +92,6 @@ vector<GLine> GLine::get_segments(int num_segments){
 
 float GLine::get_length(){
     return a.distance(b);
-}
-
-//returns true if line intersects
-bool GLine::intersects(GLine other){
-    ofPoint out;
-    ofPoint my_a = a;
-    ofPoint my_b = b;
-    ofPoint other_a = other.a;
-    ofPoint other_b = other.b;
-    if (ofLineSegmentIntersection(my_a, my_b, other_a, other_b, out)){
-        return true;
-    }
-    return false;
-}
-
-//returns true if line intersects, and writes the intersect point to the passed ofVec2f
-bool GLine::intersects(GLine other, ofVec2f &intersect_pnt){
-    ofPoint out;        //ofLineSegmentIntersection takes ofPoint, but I don't like 'em
-    ofPoint my_a = a;
-    ofPoint my_b = b;
-    ofPoint other_a = other.a;
-    ofPoint other_b = other.b;
-    if (ofLineSegmentIntersection(my_a, my_b, other_a, other_b, out)){
-        intersect_pnt.x = out.x;
-        intersect_pnt.y = out.y;
-        return true;
-    }
-    return false;
-}
-
-
-
-//this always assumes A is the side that will remain
-bool GLine::clip_to_other_line(float other_a_x, float other_a_y, float other_b_x, float other_b_y){
-    ofPoint out;
-    ofPoint my_a = a;
-    ofPoint my_b = b;
-    ofPoint other_a = ofPoint(other_a_x, other_a_y);
-    ofPoint other_b = ofPoint(other_b_x, other_b_y);
-    if (ofLineSegmentIntersection(my_a, my_b, other_a, other_b, out)){
-        b = out;
-        return true;
-    }
-    return false;
-}
-bool GLine::clip_to_other_line(GLine other){
-    return clip_to_other_line(other.a.x, other.a.y, other.b.x, other.b.y);
-}
-bool GLine::clip_to_other_line(ofVec2f other_a, ofVec2f other_b){
-    return clip_to_other_line(other_a.x, other_a.y, other_b.x, other_b.y);
-}
-
-void GLine::swap_a_and_b(){
-    ofVec2f temp = ofVec2f(a);
-    a.set(b);
-    b.set(temp);
 }
 
 //returns a box around the line
@@ -173,6 +127,67 @@ vector<ofVec2f> GLine::get_bounds(float padding){
     
     return bounds;
 }
+
+//--- Intersection
+
+//returns true if line intersects
+bool GLine::intersects(GLine other){
+    ofPoint out;
+    ofPoint my_a = a;
+    ofPoint my_b = b;
+    ofPoint other_a = other.a;
+    ofPoint other_b = other.b;
+    if (ofLineSegmentIntersection(my_a, my_b, other_a, other_b, out)){
+        return true;
+    }
+    return false;
+}
+
+//returns true if line intersects, and writes the intersect point to the passed ofVec2f
+bool GLine::intersects(GLine other, ofVec2f &intersect_pnt){
+    ofPoint out;        //ofLineSegmentIntersection takes ofPoint, but I don't like 'em
+    ofPoint my_a = a;
+    ofPoint my_b = b;
+    ofPoint other_a = other.a;
+    ofPoint other_b = other.b;
+    if (ofLineSegmentIntersection(my_a, my_b, other_a, other_b, out)){
+        intersect_pnt.x = out.x;
+        intersect_pnt.y = out.y;
+        return true;
+    }
+    return false;
+}
+
+
+//--- Clipping
+
+//this always assumes A is the side that will remain
+bool GLine::clip_to_other_line(float other_a_x, float other_a_y, float other_b_x, float other_b_y){
+    ofPoint out;
+    ofPoint my_a = a;
+    ofPoint my_b = b;
+    ofPoint other_a = ofPoint(other_a_x, other_a_y);
+    ofPoint other_b = ofPoint(other_b_x, other_b_y);
+    if (ofLineSegmentIntersection(my_a, my_b, other_a, other_b, out)){
+        b = out;
+        return true;
+    }
+    return false;
+}
+bool GLine::clip_to_other_line(GLine other){
+    return clip_to_other_line(other.a.x, other.a.y, other.b.x, other.b.y);
+}
+bool GLine::clip_to_other_line(ofVec2f other_a, ofVec2f other_b){
+    return clip_to_other_line(other_a.x, other_a.y, other_b.x, other_b.y);
+}
+
+void GLine::swap_a_and_b(){
+    ofVec2f temp = ofVec2f(a);
+    a.set(b);
+    b.set(temp);
+}
+
+//--- Trimming lines
 
 //removes all parts of this line inside the polygon
 //if a list is provided, any new lines that need to be created will be added there
@@ -322,14 +337,6 @@ bool GLine::checkInPolygon(vector<ofVec2f> p, float x, float y)
             c = !c;
     }
     return c;
-//    int i, j, c = 0;
-//    for (i = 0, j = p.size()-1; i < p.size(); j = i++) {
-//        if ((((p[i].y <= y) && (y <= p[j].y)) ||
-//             ((p[j].y <= y) && (y <= p[i].y))) &&
-//            (x < (p[j].x - p[i].x) * (y - p[i].y) / (p[j].y - p[i].y) + p[i].x))
-//            c = !c;
-//    }
-//    return c;
 }
 
 //https://stackoverflow.com/questions/7050186/find-if-point-lays-on-line-segment
@@ -351,16 +358,3 @@ bool GLine::check_point_on_line(ofVec2f t, ofVec2f p1, ofVec2f p2){
 }
 
 
-//These functions have been depricated
-bool GLine::clip_inside_rect(ofRectangle rect){
-    cout<<"clip_inside_rect HAS BEEN REMOVED use trim_outside_rect instead!"<<endl;
-    return false;
-}
-bool GLine::clip_inside_polygon(vector<ofVec2f> pnts){
-    cout<<"clip_inside_polygon HAS BEEN REMOVED use trim_outside_polygon instead!"<<endl;
-    return false;
-}
-bool GLine::clip_outside_polygon(vector<ofVec2f> pnts){
-    cout<<"clip_outside_polygon HAS BEEN REMOVED use trim_inside_polygon instead!"<<endl;
-    return false;
-}

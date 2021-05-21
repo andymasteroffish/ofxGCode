@@ -4,6 +4,9 @@
 //
 //  Created by Andrew Wallace on 11/3/20.
 //
+//  Line Groups are used during the sorting process
+//  They represent continous sets of lines
+
 
 #ifndef GCodeLineGroup_h
 #define GCodeLineGroup_h
@@ -21,6 +24,7 @@ public:
         lines.clear();
         do_not_reverse = false;
     }
+    
     void add_to_front(GLine line){
         lines.insert( lines.begin(), line);
         start_pos = line.a;

@@ -512,7 +512,7 @@ ofVec2f ofxGCode::getModelPoint(float x, float y){
     return return_val;
 }
 
-//this is not perfect yet. Some of the resulting order is deifnitely not as efficient as it could be
+//this is not perfect yet. Some of the resulting order is definitely not as efficient as it could be
 void ofxGCode::sort(){
     
     //try to break the lines into groups of continuous lines
@@ -717,7 +717,7 @@ vector<GLine> ofxGCode::trim_intersecting_lines(vector<GLine> lines_to_trim, vec
     return  val;
 }
 
-void ofxGCode::demo_trim(float x1, float y1, float x2, float y2){
+void ofxGCode::demo_trim(float x1, float y1, float x2, float y2, bool do_translate){
     //first trim in the box
     ofRectangle box;
     box.x = x1;
@@ -727,7 +727,9 @@ void ofxGCode::demo_trim(float x1, float y1, float x2, float y2){
     
     trim_outside(box);
     
-    translate(-x1, -y1);
+    if (do_translate){
+        translate(-x1, -y1);
+    }
 }
 
 //--------------------------------------------------------------

@@ -14,11 +14,10 @@
 */
 
 // This comes from https://github.com/tobiaszimmer/ofxHersheyFont
-// Andy is heavily modifying it for this project
+// I am modifying it for this project
 
 #include "ofMain.h"
 #include "ofxGCode.hpp"
-//#include "SymbolDraw.hpp"
 
 class ofxHersheyFont {
 	public:
@@ -38,10 +37,6 @@ class ofxHersheyFont {
     
     int line_height;
     
-//    SymbolDraw * symbol_draw;
-//    float default_symbol_size;
-//    float symbol_spacing;
-
 	private:
 		void drawChar(int asciiValue, ofxGCode * gcode);
     

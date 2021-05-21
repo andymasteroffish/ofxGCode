@@ -5,6 +5,9 @@
 //  Created by Andrew Wallace on 4/8/19. Based on code by Trammel Hudson.
 //
 
+// This code is entirely based on the Processing VST library by Trammell Hudson
+// https://github.com/osresearch/vst
+
 #include "Clipping.hpp"
 
 void Clipping::setup(ofVec2f p0, ofVec2f p1) {

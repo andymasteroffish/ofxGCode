@@ -13,6 +13,9 @@
 *
 */
 
+// This comes from https://github.com/tobiaszimmer/ofxHersheyFont
+// I am modifying it for this project
+
 #include "ofxHersheyFont.h"
 #include "simplexCharacterSet.h"
 

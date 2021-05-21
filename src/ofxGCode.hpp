@@ -90,7 +90,7 @@ public:
     
     //used to demo an area by trimming to a box and translating to 0,0
     //I almost always want to do this based on two points, so those are the arguments
-    void demo_trim(float x1, float y1, float x2, float y2);
+    void demo_trim(float x1, float y1, float x2, float y2, bool do_translate=true);
     
     //any lines outside of this bound will be forced to draw from the center out. 
     void set_outwards_only_bounds(ofRectangle safe_area);
@@ -105,7 +105,6 @@ public:
     
     //code is a modified version of code by Randolph Franklin
     //from http://paulbourke.net/geometry/insidepoly/
-    //bool checkInPolygon(vector<ofVec2f> p, float x, float y);
     static bool checkInPolygon(vector<ofVec2f> p, float x, float y);
     
     //other helpers
