@@ -1,5 +1,6 @@
 # ofxGCode
-GCode library for oF 0.11.0, mostly made with my axidraw in mind
+
+G-Code library for openFrameworks 0.11.0, mostly made with my AxidDaw in mind
 
 This creates 2 dimensional gcode instructions, primarily for plotters
 
@@ -13,14 +14,14 @@ This is a work in progress. Some parts are a bit buggy. I'll add features as I n
 
 There are parts of this that are wildly innificient. Trimming functions in particular will really slow things down when done in large numbers. Luckily you don't need to hit 30FPS when making a still image.
 
-See ofxGCode.hpp and ofxGLine.h for explanations. These two classes make up the bulk of the fnctionality and I have tried to comment them nicely.
+See ofxGCode.hpp and ofxGLine.h for explanations. These two classes make up the bulk of the functionality and I have tried to comment them effectively.
 
 You can use a site like https://ncviewer.com/ to test the output
 
 I'm sure typos abound. Sorry about that.
 
-If you like my plotter work, you can buy some of it here: https://andymakes.bigcartel.com/
+If you like my plotter work, you can buy some of it here: https://shop.andymakes.com/
 
-This library incorporates some features from these repos:
+This library incorporates code from these repos:
 * https://github.com/tobiaszimmer/ofxHersheyFont
 * https://github.com/osresearch/vst
