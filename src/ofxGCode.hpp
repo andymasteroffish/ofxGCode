@@ -61,7 +61,7 @@ public:
     ///setup must be called before you can use a ofxGCode object. pixels_per_inch argument is optional and will default to 100 pixels per inch
     void setup(float _pixels_per_inch = 100);
     
-    ///changes the canvas size. This is called in setup and you generally should not need to use it
+    ///changes the canvas size. By default this is set as the document size in setup
     void set_size(int w, int h);
     
     ///clears all lines from this drawing
@@ -72,6 +72,7 @@ public:
     
     ///draws a preview of the current lines to the screen using the demo_col and the various "show" variables.
     ///if max_lines_to_show is a possitive numberm the drawing will stop after that many lines. This can be useful to walk through your drawing
+    ///the preview is always drawn at 0,0
     void draw(int max_lines_to_show = -1);
     
     

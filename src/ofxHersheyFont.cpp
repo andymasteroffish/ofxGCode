@@ -13,8 +13,8 @@
 *
 */
 
-// This comes from https://github.com/tobiaszimmer/ofxHersheyFont
-// I am modifying it for this project
+// This is a heavily modified verison of ofxHersheyFont by Tobias Zimmer
+// you can find the original here: https://github.com/tobiaszimmer/ofxHersheyFont
 
 #include "ofxHersheyFont.h"
 #include "simplexCharacterSet.h"
@@ -22,8 +22,7 @@
 
 //--------------------------------------------------------------
 ofxHersheyFont::ofxHersheyFont(){
-	color = ofColor(0);
-    line_height = 35;//33;
+    line_height = 35;
 }
 
 //--------------------------------------------------------------
@@ -125,49 +124,11 @@ void ofxHersheyFont::draw(string stringValue, float xPos, float yPos, float scal
         //get ascii value of specific character from the input string
         int asciiValue = stringValue.at(i);
         
-        //cout<<"char "<<stringValue.at(i)<<endl;
-        //cout<<"ASCII "<<asciiValue<<endl;
-        
-        //is this a symbol?
-//        bool circle_symbol = false; //mana and such
-//        if (stringValue.at(i) == '{'){
-//            char symbol_char = stringValue.at(i+1);
-//            if (symbol_char == 'W') asciiValue = SYMBOL_W;
-//            else if (symbol_char == 'U') asciiValue = SYMBOL_U;
-//            else if (symbol_char == 'B') asciiValue = SYMBOL_B;
-//            else if (symbol_char == 'R') asciiValue = SYMBOL_R;
-//            else if (symbol_char == 'G') asciiValue = SYMBOL_G;
-//            else if (symbol_char == 'T') asciiValue = SYMBOL_TAP;
-//            else if (symbol_char == 'P') asciiValue = SYMBOL_PHYREXIAN;
-//            else {
-//                circle_symbol = true;
-//                asciiValue = symbol_char;
-//            }
-//            i+=2;   //skip to the next real character
-//        }
-        
-        float symbol_offset_x = 6;
         
         if (asciiValue == '\n'){
             line_num++;
             characterXPos = 0;
         }
-        /*
-         In the project I inititaly made this for, I had the option to draw vector symbols. Maybe I'll bring it bakc at some point
-        else if (asciiValue < NUM_SYMBOLS){
-            //this was drawing a little off so I adjusted it. Magic numebrs!
-            symbol_draw->draw(asciiValue, -symbol_offset_x, 5, false, default_symbol_size, gcode);
-            characterXPos += symbol_spacing * default_symbol_size * scale;
-            
-            //if the next symbol is also a char, we need ot give it some extra spacing
-            if (i < stringValue.length()-1){
-                char next = stringValue.at(i+1);
-                if (next == '{'){
-                    characterXPos += symbol_offset_x;
-                }
-            }
-        }
-         */
         else{
 
             //if character is not available, use questionmark
@@ -215,17 +176,6 @@ void ofxHersheyFont::drawChar(int asciiValue, ofxGCode * gcode) {
 }
 
 //--------------------------------------------------------------
-//void ofxHersheyFont::drawSymbol(int symbolValue, ofxGCode * gcode){
-//    symbol_draw->draw(symbolValue, 0, 0, false, default_symbol_size, gcode);
-//}
-
-
-//--------------------------------------------------------------
-void ofxHersheyFont::setColor(ofColor c) {
-	color = c;
-}
-
-//--------------------------------------------------------------
 float ofxHersheyFont::getWidth(string stringValue, float scale){
 	float stringWidth = 0;
     float longest_string_width;
@@ -267,13 +217,15 @@ float ofxHersheyFont::getHeight(string stringValue, float scale){
 }
 
 //--------------------------------------------------------------
-float ofxHersheyFont::getHeight(float scale) {
+float ofxHersheyFont::getCapitalHeight(float scale) {
 	//the height of a capital letter is 21px (scale 1)
 	float stringHeight = (float) 21 * scale;
 
 	return stringHeight;
 }
 
+//--------------------------------------------------------------
+//This includes the white space that would be under the line 
 float ofxHersheyFont::getLineHeight(float scale) {
     return line_height * scale;
 }
