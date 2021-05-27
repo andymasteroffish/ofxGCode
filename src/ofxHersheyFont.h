@@ -13,7 +13,7 @@
 *
 */
 
-// This is a heavily modified verison of ofxHersheyFont by Tobias Zimmer.
+// This is a heavily modified version of ofxHersheyFont by Tobias Zimmer.
 // you can find the original here: https://github.com/tobiaszimmer/ofxHersheyFont
 
 // This class is not included by default in ofxGCode. You will need an extra #include statement for it.

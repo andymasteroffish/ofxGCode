@@ -16,7 +16,7 @@
 #include "GCodeLineGroup.h"
 
 //ofxGCode is the core class of this library
-//an ofxGCode object represents a single gcode file (typically one pass on the plotter)
+//an ofxGCode object represents a single g-code file (typically one pass on the plotter)
 //use multiple ofxGCode objects to create layered drawings (for multiple colors etc)
 
 //The static functions are tools that can be used anywhere. They take all of the info they need and return some result (most often a vector of GLines)
@@ -46,8 +46,8 @@ public:
     bool show_path_with_color;      //if true, the line color will go from green to blue over the length of the plot. Useful to check optimization
     bool show_do_not_reverse;       //if true, lines with the do not reverse flag will be displayed along with arrows showing what direction they are going
     
-    ofColor demo_col;           //the color used for drawing this gcode. Set this to whatever you want
-    float demo_fade_prc;        //how faded the color will be. Typically overlapping pen storkes will appear darker so it is helpful have this be true in our display as well
+    ofColor demo_col;           //the color used for drawing this g-code. Set this to whatever you want
+    float demo_fade_prc;        //how faded the color will be. Typically overlapping pen strokes will appear darker so it is helpful have this be true in our display as well
     
     
     
@@ -61,7 +61,7 @@ public:
     ///setup must be called before you can use a ofxGCode object. pixels_per_inch argument is optional and will default to 100 pixels per inch
     void setup(float _pixels_per_inch = 100);
     
-    ///changes the canvas size. By default this is set as the document size in setup
+    ///changes the canvas size. By default this is set to ofGetWidth() & ofGetHeight() in setup
     void set_size(int w, int h);
     
     ///clears all lines from this drawing
@@ -71,14 +71,14 @@ public:
     //--- Demo Drawing
     
     ///draws a preview of the current lines to the screen using the demo_col and the various "show" variables.
-    ///if max_lines_to_show is a possitive numberm the drawing will stop after that many lines. This can be useful to walk through your drawing
+    ///if max_lines_to_show is a positive number the drawing will stop after that many lines. This can be useful to walk through your drawing
     ///the preview is always drawn at 0,0
     void draw(int max_lines_to_show = -1);
     
     
     //--- Saving
     
-    ///saves the file to the bin folder
+    ///saves the file to the bin/data folder
     void save(string name);
     
     
@@ -89,7 +89,7 @@ public:
     ///draws a rectangle with the given values
     void rect(float x, float y, float w, float h);
     
-    
+    ///draws a rectangle with rounded corners
     void rounded_rect(ofRectangle rect, float corner_size, int corner_resolution=10);
     ///draws a rectangle with rounded corners
     void rounded_rect(float x, float y, float w, float h, float corner_size, int corner_resolution=10);
@@ -130,9 +130,9 @@ public:
     //--- Lines
     ///draws a line that matches the GLine being passed in. (only the position will be used. Flag values will not be copied over)
     void line(GLine _line);
-    ///draws a line with the given values
+    ///draws a line between the given points
     void line(ofVec2f a, ofVec2f b);
-    ///draws a line with the given values
+    ///draws a line between the given points
     void line(float x1, float y1, float x2, float y2);
     
     ///adds multiple lines to the drawing
@@ -144,11 +144,11 @@ public:
     
     //--- Line Tools
     
-    ///takes a polygon defined as a vector of points and respampes it, returning another vector of points that should be the same shape but evenly spaced
-    ///note, this translation is lossy
+    ///takes a polygon defined as a vector of points and resamples it, returning another vector of points that should be the same shape but evenly spaced
+    ///note: this translation is lossy
     static vector<ofVec2f> resample_lines(vector<ofVec2f> src_pnts, float sample_dist, bool close_shape, int steps_per_point=100);
     
-    ///takes a vector of points and returns a vector of GLines that connect those points. if close is true, a final GLine will be created connecting the first and last point
+    ///takes a vector of points and returns a vector of GLines that connects those points. if close is true, a final GLine will be created connecting the first and last point
     static vector<GLine> pnts_to_lines(vector<ofVec2f> pnts, bool close);
     
     
@@ -156,7 +156,7 @@ public:
     
     ///draws a bezier curve using the given values. steps defines the number of points that will be used in the line
     void bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps = 50);
-    ///static function that returns a vector of the ponts that make up a bezier curve with the given values. steps defines the number of points that will be used in the line
+    ///static function that returns a vector of the points that make up a bezier curve with the given values. steps defines the number of points that will be used in the line
     static vector<ofVec2f> get_bezier_pnts(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps);
     
     
@@ -168,6 +168,7 @@ public:
     ///draws text at the x and y position using the given font (which must be passed in as a pointer)
     void text(string text, ofTrueTypeFont * font, float x, float y);
     
+
     //--- Getting the screen point from inside a matrix
     //This was a long process of trial and error and only works in 2D
     //Almost all of the drawing functions call these at some point.
@@ -179,12 +180,13 @@ public:
     ///gets the position on the screen of a point, accounting for any 2D matrix transformations
     ofVec2f getModelPoint(float x, float y);
     
-    //--- Optimmizing the lines
+    //--- Optimizing the lines
     //When using a plotter, optimizing the path saves a lot of time
     //The sorting code comes from Trammell Hudson
     //https://github.com/osresearch/vst
     
     ///Takes all of the unlocked lines in the drawing and reorders them to try and produce the shortest possible travel distance
+    ///This often involves flipping a line so it is drawn from B to A
     void sort();
     
     ///unlocks all current lines in the drawing, allowing them to be trimmed or moved
@@ -196,7 +198,7 @@ public:
     float measureTransitDistance();
     
     //--- Trimming
-    //These functions are used to mask the lines against a shape, removing parts of lines or removing the line entirely if it is inside or outside the shape (depending on the funciton called
+    //These functions are used to mask the lines against a shape, removing parts of lines or removing the line entirely if it is inside or outside the shape (depending on the function called
     //They work but are not optimized and will slow things down if you do it a lot
     
     //The non-static version of these functions will perform the operation on all lines currently in the drawing
@@ -204,20 +206,20 @@ public:
     //The static version will take a vector of lines to trim and will return a new vector of the trimmed lines. The original set of lines will not be changed
     //This is useful to trim sets of lines before adding them to the drawing (for instance, when there are already lines in the drawing that you do not want trimmed)
     
-    ///takes a vector of source lines and a polygon defined by bounds. returns a  vector of lines with any line or line segment inside bounds removed
+    ///takes a vector of source lines and a polygon defined by bounds. returns a vector of lines with any line or line segment inside bounds removed
     static vector<GLine> trim_lines_inside(vector<GLine> lines, vector<ofVec2f> bounds);
     ///trims all lines of the drawing inside the given polygon
     void trim_inside(vector<ofVec2f> bounds);
-    ///takes a vector of source lines and rectangle. returns a  vector of lines with any line or line segment inside bounds removed
+    ///takes a vector of source lines and rectangle. returns a vector of lines with any line or line segment inside bounds removed
     static vector<GLine> trim_lines_inside(vector<GLine> lines, ofRectangle bounds);
     ///trims all lines of the drawing inside the given rectangle
     void trim_inside(ofRectangle bounds);
     
-    ///takes a vector of source lines and a polygon defined by bounds. returns a  vector of lines with any line or line segment outside bounds removed
+    ///takes a vector of source lines and a polygon defined by bounds. returns a vector of lines with any line or line segment outside bounds removed
     static vector<GLine> trim_lines_outside(vector<GLine> lines, vector<ofVec2f> bounds);
     ///trims all lines of the drawing outside the given polygon
     void trim_outside(vector<ofVec2f> bounds);
-    ///takes a vector of source lines and rectangle. returns a  vector of lines with any line or line segment outside bounds removed
+    ///takes a vector of source lines and rectangle. returns a vector of lines with any line or line segment outside bounds removed
     static vector<GLine> trim_lines_outside(vector<GLine> lines, ofRectangle bounds);
     ///trims all lines of the drawing outside the given rectangle
     void trim_outside(ofRectangle bounds);
@@ -232,8 +234,8 @@ public:
     
     //--- Other tools
     
-    ///Any lines outside of this bound will be forced to draw from the center out.
-    ///This is useful when drawing right up to the edge of the page to make sure that the pen always moves from inside the page otwards the edge (instead of the other way around, which would cause the pen to catch on the edge of the paper)
+    ///Any lines outside of this rectangle will be forced to draw from the center out.
+    ///This is useful when drawing right up to the edge of the page to make sure that the pen always moves from inside the page out towards the edge (instead of the other way around, which could cause the pen to catch on the edge of the paper)
     ///This will set do_not_reverse on the lines that are in the edge area
     void set_outwards_only_bounds(ofRectangle safe_area);
     
@@ -246,9 +248,10 @@ public:
     
     
     //--- Saving / loading from files
-    //this saves/load using a pretty wonky format
+    //this saves/load is using a pretty wonky format
     //I only made it as an easy way to copy a bunch of line segments from one project to another
     //it was designed to be simple and won't work outside of this library
+    //This is not what you should use to save your g-code
     
     ///loads a list of outlines
     static vector<vector<ofVec2f>> load_outlines(string file_path);
