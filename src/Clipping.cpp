@@ -1,6 +1,5 @@
 //
 //  Clipping.cpp
-//  vectrex_test
 //
 //  Created by Andrew Wallace on 4/8/19. Based on code by Trammel Hudson.
 //

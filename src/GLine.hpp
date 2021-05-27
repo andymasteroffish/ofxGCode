@@ -26,10 +26,10 @@ public:
     bool skip_me;
     
     ///if true, this line will not be flipped in the sorting process.
-    ///this is typically set automaticly in ofxGCode for things like set_outwards_only_bounds()
+    ///this is typically set automatically in ofxGCode for things like set_outwards_only_bounds()
     bool do_not_reverse;
     
-    ///if true, this line will not be trimmed
+    ///if true, this line will not be trimmed or moved
     bool is_locked;
     
     
@@ -45,12 +45,12 @@ public:
     /// initializes a GLine with starting A and B points as ofVec2f
     GLine(ofVec2f _a, ofVec2f _b);
     
-    /// intitalizes a GLine with starting A and B points as floats
+    /// initializes a GLine with starting A and B points as floats
     GLine(float x1, float y1, float x2, float y2);
     
     
     //--- Set functions
-    //these functions overide the A and B values of the line
+    //these functions override the A and B values of the line
     //the line will keep other values (do_not_reverse etc)
     
     /// sets the A and B points to new values
@@ -60,9 +60,10 @@ public:
     void set(float x1, float y1, float x2, float y2);
     
     /// sets the A and B points to match another line
+    /// other attributes of the other line are not copied
     void set(GLine other);
     
-    /// sets is_locked. Locked lines will not be trimmed
+    /// sets is_locked. Locked lines will not be trimmed or moved
     void set_locked(bool val);
     
     
@@ -75,12 +76,14 @@ public:
     
     
     //--- Utilities
-    //Some helpful functions that don't really fit into other catagories
+    //Some helpful functions that don't really fit into other categories
     
-    /// returns a new line with the same length and angle of the current line, but offset along X and Y. This will not change the line it is called on
+    /// returns a new line with the same length and angle of the current line, but offset along X and Y.
+    /// This will not change the line it is called on
     GLine get_offset(ofVec2f offset);
     
-    /// Breaks the line into evenly spaced segments and returns them as a vector of GLines. No change is made to the line.
+    /// Breaks the line into evenly spaced segments and returns them as a vector of GLines.
+    /// No change is made to the line.
     vector<GLine> get_segments(int num_segments);
     
     /// returns the length of this line
@@ -95,19 +98,20 @@ public:
     /// returns true if this line intersects the other
     bool intersects(GLine other);
     
-    /// returns true if this line intersects the other. If they do intersect and intersect_pnt is provided, it will be set the the x/y position of the intersection
+    /// returns true if this line intersects the other.
+    /// If they do intersect and intersect_pnt is provided, it will be set to the the x/y position of the intersection
     bool intersects(GLine other, ofVec2f &intersect_pnt);
     
     //--- Clipping
     //These functions cut a line to end where it touches another line
     
-    /// if this line intersects other, the B position of this line will be moved to the intersection pooint
+    /// if this line intersects other, the B position of this line will be moved to the intersection point
     bool clip_to_other_line(GLine other);
     
-    /// if this line intersects the line described by other_a & other_b, the B position of this line will be moved to the intersection pooint
+    /// if this line intersects the line described by other_a & other_b, the B position of this line will be moved to the intersection point
     bool clip_to_other_line(ofVec2f other_a, ofVec2f other_b);
     
-    /// if this line intersects the line described by the four points, the B position of this line will be moved to the intersection pooint
+    /// if this line intersects the line described by the four points, the B position of this line will be moved to the intersection point
     bool clip_to_other_line(float other_a_x, float other_a_y, float other_b_x, float other_b_y);
     
     /// Swaps the values of A and B on this line. The clipping functions always assume that the A point will stay the same and the B point will be moved, so this is useful to do if you want the A side to change
@@ -115,11 +119,11 @@ public:
     
     
     //--- Trimming lines
-    //These are mostly helper functions for ofxGCode::trim_lines_inside & ofxGCode::trim_lines_outside
-    //If the line passes through the provided shape, it will be trimmed.
-    //However, this sometimes requires that new lines are created (for instance, we trim a circle in the middle of the line, we now have a line on either side)
-    //For this reason a list value is passed in where any new lines will be put.
-    //of the trimming functions in ofxGCode will deal with this automatically
+    // These are mostly helper functions for ofxGCode::trim_lines_inside & ofxGCode::trim_lines_outside
+    // If the line passes through the provided shape, it will be trimmed.
+    // However, this sometimes requires that new lines are created (for instance, we trim a circle in the middle of the line, we now have a line on either side)
+    // For this reason a list value is passed in where any new lines will be put.
+    // The trimming functions in ofxGCode will deal with this automatically
     
     /// trims all points of the line inside the rectangle. if a list is provided, any new lines that need to be created will be added there
     /// generally speaking, you should use ofxGCode::trim_lines_inside instead of calling this on an individual line
@@ -146,7 +150,7 @@ public:
     
 private:
     
-    //I don't want this to show up in autocomplete. just call trim_inside_polygon or trim_outside_polygon.
+    //I don't want this to show up in auto-complete. just call trim_inside_polygon or trim_outside_polygon.
     void trim_flexible(vector<ofVec2f> pnts, bool trim_inside, vector<GLine>* list = NULL);
     
     
