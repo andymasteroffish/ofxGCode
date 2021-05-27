@@ -1,7 +1,7 @@
 # ofxGCode
 #### version 1.0
 
-![ofxGCode drawings](https://github.com/andymasteroffish/ofxGCode/blob/main/topper.jpg)
+![ofxGCode drawings](https://github.com/andymasteroffish/ofxGCode/blob/master/topper.jpg)
 
 This is a G-Code library for openFrameworks 0.11.0, mostly made with my AxidDaw pen-plotter.
 
