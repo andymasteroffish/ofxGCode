@@ -176,9 +176,15 @@ public:
     //there is probably a much better way to do this
     
     ///gets the position on the screen of a point, accounting for any 2D matrix transformations
-    ofVec2f getModelPoint(ofVec3f pnt);
+    static ofVec2f getModelPoint(ofVec3f pnt);
     ///gets the position on the screen of a point, accounting for any 2D matrix transformations
-    ofVec2f getModelPoint(float x, float y);
+    static ofVec2f getModelPoint(float x, float y);
+    
+    //takes a vector of points and gets the model position for each one
+    static vector<ofVec2f> convert_pnts_to_model_point(vector<ofVec2f> src_pnts);
+    
+    //takes a vector of lines and gets the model position for each one
+    static vector<GLine> convert_lines_to_model_point(vector<GLine> src_lines);
     
     //--- Optimizing the lines
     //When using a plotter, optimizing the path saves a lot of time

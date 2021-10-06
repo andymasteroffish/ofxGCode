@@ -514,8 +514,43 @@ ofVec2f ofxGCode::getModelPoint(float x, float y){
     return return_val;
 }
 
+//This calls getModelPoint on each point in a vector
+vector<ofVec2f> ofxGCode::convert_pnts_to_model_point(vector<ofVec2f> src_pnts){
+    vector<ofVec2f> pnts;
+    pnts.resize(src_pnts.size());
+    for (int i=0; i<src_pnts.size(); i++){
+        pnts[i] = getModelPoint(src_pnts[i]);
+    }
+    return  pnts;
+}
+
+//This is the same as convert_pnts_to_model_point but applying the transformation to each point in a set of lines
+vector<GLine> ofxGCode::convert_lines_to_model_point(vector<GLine> src_lines){
+    vector<GLine> lines;
+    lines.resize(src_lines.size());
+    for (int i=0; i<src_lines.size(); i++){
+        lines[i].set(src_lines[i]);
+        lines[i].a = getModelPoint(src_lines[i].a);
+        lines[i].b = getModelPoint(src_lines[i].b);
+    }
+    return  lines;
+}
+
 //this is not perfect yet. Some of the resulting order is definitely not as efficient as it could be
 void ofxGCode::sort(){
+    if (lines.size() == 0){
+        return;
+    }
+    
+    //if there are a bunch of locked lines, keep them at the start
+    vector<GLine> leading_locked_lines;
+    while (lines[0].is_locked){
+        leading_locked_lines.push_back(lines[0]);
+        lines.erase(lines.begin());
+        if (lines.size() == 0){
+            break;
+        }
+    }
     
     //try to break the lines into groups of continuous lines
     vector<GCodeLineGroup> line_groups;
@@ -553,6 +588,10 @@ void ofxGCode::sort(){
         line_groups.push_back(cur_group);
     }
     
+    //though any previously locked lines back to the start
+    for (int i=0; i<leading_locked_lines.size(); i++){
+        lines.push_back(leading_locked_lines[i]);
+    }
     
     //go through finding the closest end point
     ofVec2f cur_pnt = ofVec2f();
@@ -572,7 +611,7 @@ void ofxGCode::sort(){
                 dist_sq_b = ofDistSquared(line_groups[i].end_pos.x, line_groups[i].end_pos.y, cur_pnt.x, cur_pnt.y);
             }
             
-            //are either of these poitns the closest so far?
+            //are either of these points the closest so far?
             if (dist_sq_b < close_dist_sq){
                 close_dist_sq = dist_sq_b;
                 need_to_flip = true;
