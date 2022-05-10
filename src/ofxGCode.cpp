@@ -252,11 +252,24 @@ void ofxGCode::circle(float x, float y, float size){
     }
     end_shape(true);
 }
-vector<ofVec2f> ofxGCode::get_circle_pnts(ofVec2f center, float size, int steps){
+vector<ofVec2f> ofxGCode::get_circle_pnts(ofVec2f center, float size, int steps, float angle_offset){
     float angle_step = TWO_PI/steps;
     vector<ofVec2f> pnts;
     for (int i=0; i<steps; i++){
-        float angle = angle_step * i;
+        float angle = angle_offset + angle_step * i;
+        ofVec2f pos;
+        pos.x = center.x + cos(angle) * size;
+        pos.y = center.y + sin(angle) * size;
+        pnts.push_back(pos);
+    }
+    return pnts;
+}
+
+vector<ofVec2f> ofxGCode::get_arc_pnts(ofVec2f center, float size, int steps, float start_angle, float end_angle){
+    vector<ofVec2f> pnts;
+    for (int i=0; i<steps; i++){
+        float prc = (float)i / (float)(steps-1);
+        float angle = (1.0-prc)*start_angle + prc*end_angle;
         ofVec2f pos;
         pos.x = center.x + cos(angle) * size;
         pos.y = center.y + sin(angle) * size;
@@ -444,6 +457,32 @@ void ofxGCode::text(string text, ofTrueTypeFont * font, float x, float y){
     }
     
     ofPopMatrix();
+}
+
+vector<vector<ofVec2f>> ofxGCode::get_text_outlines(string text, ofTrueTypeFont * font){
+    bool vflip = true; // OF flips y coordinate in the default perspective,
+    // should be false if using a camera for example
+    bool filled = false; // or false for contours
+    vector < ofPath > paths = font->getStringAsPoints(text, vflip, filled);
+    
+    vector<vector<ofVec2f>> outlines;
+    
+    
+    for (int i = 0; i < paths.size(); i++){
+        // for every character break it out to polylines
+        vector <ofPolyline> polylines = paths[i].getOutline();
+        
+        // for every polyline, draw lines
+        for (int j = 0; j < polylines.size(); j++){
+            vector<ofVec2f> outline;
+            for (int k = 0; k < polylines[j].size(); k++){
+                outline.push_back(ofVec2f(polylines[j][k].x,polylines[j][k].y));
+            }
+            outlines.push_back(outline);
+        }
+    }
+    
+    return outlines;
 }
 
 
@@ -965,6 +1004,10 @@ bool ofxGCode::checkInPolygon(vector<ofVec2f> p, float x, float y)
             c = !c;
     }
     return c;
+}
+
+bool ofxGCode::checkInPolygon(vector<ofVec2f> p, ofVec2f pnt){
+    return checkInPolygon(p, pnt.x, pnt.y);
 }
 
 

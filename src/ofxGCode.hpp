@@ -109,7 +109,9 @@ public:
     ///draws a circle with the given values
     void circle(float x, float y, float size);
     ///static function to get the points that make up a circle. steps will be the resolution of the circle
-    static vector<ofVec2f> get_circle_pnts(ofVec2f center, float size, int steps);
+    static vector<ofVec2f> get_circle_pnts(ofVec2f center, float size, int steps, float angle_offset=0);
+    
+    static vector<ofVec2f> get_arc_pnts(ofVec2f center, float size, int steps, float start_angle, float end_angle);
     
     
     //--- Polygons
@@ -167,6 +169,9 @@ public:
     //--- Font-based text
     ///draws text at the x and y position using the given font (which must be passed in as a pointer)
     void text(string text, ofTrueTypeFont * font, float x, float y);
+    
+    //returns a vector of vectors with the outlines that make up each letter
+    static vector<vector<ofVec2f>> get_text_outlines(string text, ofTrueTypeFont * font);
     
 
     //--- Getting the screen point from inside a matrix
@@ -272,6 +277,9 @@ public:
     //from http://paulbourke.net/geometry/insidepoly/
     ///returns true if the point described by x & y is inside the polygon defined by p
     static bool checkInPolygon(vector<ofVec2f> p, float x, float y);
+    
+    ///returns true if the point described by pnt is inside the polygon defined by p
+    static bool checkInPolygon(vector<ofVec2f> p, ofVec2f pnt);
     
     
     
