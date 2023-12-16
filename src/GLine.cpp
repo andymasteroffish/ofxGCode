@@ -94,6 +94,14 @@ float GLine::get_length(){
     return a.distance(b);
 }
 
+/// returns pnt a or b
+/// 0 = a, 1 (or anything else) = b
+ofVec2f GLine::get_pnt_by_index(int ind){
+    if (ind == 0)   return a;
+    
+    return b;
+}
+
 //returns a box around the line
 vector<ofVec2f> GLine::get_bounds(float padding){
     vector<ofVec2f> bounds;

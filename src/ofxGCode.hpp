@@ -110,8 +110,9 @@ public:
     void circle(float x, float y, float size);
     ///static function to get the points that make up a circle. steps will be the resolution of the circle
     static vector<ofVec2f> get_circle_pnts(ofVec2f center, float size, int steps, float angle_offset=0);
+    static vector<ofVec2f> get_oval_pnts(ofVec2f center, float width, float height, int steps, float angle_offset=0);
     
-    static vector<ofVec2f> get_arc_pnts(ofVec2f center, float size, int steps, float start_angle, float end_angle);
+    static vector<ofVec2f> get_arc_pnts(ofVec2f center, float size, int steps, float start_angle, float end_angle, float height_scale = 1);
     
     
     //--- Polygons
@@ -252,6 +253,9 @@ public:
     
     ///moves all non-locked lines in the drawing by the specified x and y values
     void translate(float x, float y);
+    
+    ///Rotates all points of the drawing counter clockwise
+    void rotate_ccw();
     
     ///static function that takes a point, a rectangle of the source area, and 4 points to map that source area to. returns a new point that has been warped into the new_bounds
     ///x_curve and y_curve are optional values that will apply an exponential curve when calculating the new point

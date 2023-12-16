@@ -89,6 +89,9 @@ public:
     /// returns the length of this line
     float get_length();
     
+    /// returns pnt a or b
+    ofVec2f get_pnt_by_index(int ind);
+    
     /// Returns a vector of 4 points forming a box around the line that is padding distance from the line
     vector<ofVec2f> get_bounds(float padding);
     

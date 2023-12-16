@@ -265,14 +265,27 @@ vector<ofVec2f> ofxGCode::get_circle_pnts(ofVec2f center, float size, int steps,
     return pnts;
 }
 
-vector<ofVec2f> ofxGCode::get_arc_pnts(ofVec2f center, float size, int steps, float start_angle, float end_angle){
+vector<ofVec2f> ofxGCode::get_oval_pnts(ofVec2f center, float width, float height, int steps, float angle_offset){
+    float angle_step = TWO_PI/steps;
+    vector<ofVec2f> pnts;
+    for (int i=0; i<steps; i++){
+        float angle = angle_offset + angle_step * i;
+        ofVec2f pos;
+        pos.x = center.x + cos(angle) * width;
+        pos.y = center.y + sin(angle) * height;
+        pnts.push_back(pos);
+    }
+    return pnts;
+}
+
+vector<ofVec2f> ofxGCode::get_arc_pnts(ofVec2f center, float size, int steps, float start_angle, float end_angle, float height_scale){
     vector<ofVec2f> pnts;
     for (int i=0; i<steps; i++){
         float prc = (float)i / (float)(steps-1);
         float angle = (1.0-prc)*start_angle + prc*end_angle;
         ofVec2f pos;
         pos.x = center.x + cos(angle) * size;
-        pos.y = center.y + sin(angle) * size;
+        pos.y = center.y + sin(angle) * size * height_scale;
         pnts.push_back(pos);
     }
     return pnts;
@@ -878,6 +891,27 @@ void ofxGCode::translate(float x, float y){
             lines[i].b.y += y;
         }
     }
+}
+
+//--------------------------------------------------------------
+void ofxGCode::rotate_ccw(){
+    float orig_w = clip.max.x;
+    float orig_h = clip.max.y;
+    for (int i=0; i<lines.size(); i++){
+        ofVec2f * pnts[2];
+        pnts[0] = &lines[i].a;
+        pnts[1] = &lines[i].b;
+        for (int k=0; k<2; k++){
+            float orig_x = pnts[k]->x;
+            float orig_y = pnts[k]->y;
+            
+            pnts[k]->x = orig_y;
+            pnts[k]->y = orig_w-orig_x;
+        }
+    }
+    
+    //might need to set clipping plane here
+    clip.setup(ofVec2f(0,0), ofVec2f(orig_h, orig_w));
 }
 
 //--------------------------------------------------------------
