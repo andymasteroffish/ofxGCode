@@ -3,7 +3,7 @@
 
 ![ofxGCode drawings](https://github.com/andymasteroffish/ofxGCode/blob/master/topper.jpg)
 
-This is a G-Code library for openFrameworks 0.11.0, mostly made with my AxidDaw pen-plotter.
+This is a G-Code library for openFrameworks 0.11.0 (also tested on oF 0.12.0), mostly made with my AxidDaw pen-plotter.
 
 This creates 2 dimensional G-code instructions, primarily for plotters.
 
