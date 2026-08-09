@@ -1,0 +1,2 @@
+# Shell scripts: use LF so they run on Linux/macOS/WSL
+*.sh text eol=lf

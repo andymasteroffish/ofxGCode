@@ -32,11 +32,11 @@ void ofxGCode::set_size(int w, int h){
 
 void ofxGCode::clear(){
     lines.clear();
+    segments.clear();
 }
 
 void ofxGCode::draw(int max_lines_to_show){
     
-    int draw_count = 0;
     if (max_lines_to_show <= 0) max_lines_to_show = lines.size();
     
     int end_index = MIN(max_lines_to_show, lines.size());
@@ -86,12 +86,11 @@ void ofxGCode::draw(int max_lines_to_show){
     
 }
 
-//genertaes gcode and writes it to a file
+//generates gcode and writes it to a file
 void ofxGCode::save(string name){
     float inches_per_pixel = 1.0 / pixels_per_inch;
     
     vector<string> commands;
-    commands.clear();
     
     //pen up and positioned at the origin
     commands.push_back("M3 S0");
@@ -125,18 +124,17 @@ void ofxGCode::save(string name){
     commands.push_back("M3 S0");
     commands.push_back("G0 X0 Y0");
     
-    cout<<"transit distance: "<<measureTransitDistance()<<endl;
+    ofLogNotice("ofxGCode") << "transit distance: " << measureTransitDistance();
     
     //write it to file
-    
-    cout<<"saving "<<commands.size()<<" commands"<<endl;
+    ofLogNotice("ofxGCode") << "saving " << commands.size() << " commands";
     ofFile myTextFile;
     myTextFile.open(name,ofFile::WriteOnly);
     for (int i=0; i<commands.size(); i++){
         myTextFile<<commands[i]<<endl;
     }
     
-    cout<<"SAVED"<<endl;
+    ofLogNotice("ofxGCode") << "saved " << name;
 }
 
 
@@ -291,6 +289,33 @@ vector<ofVec2f> ofxGCode::get_arc_pnts(ofVec2f center, float size, int steps, fl
     return pnts;
 }
 
+vector<ofVec2f> ofxGCode::get_arc_points_ijk(ofVec2f start, ofVec2f end, ofVec2f center, bool clockwise, int steps){
+    vector<ofVec2f> pnts;
+    
+    ofVec2f v1 = start - center;
+    ofVec2f v2 = end - center;
+    float angle1 = atan2(v1.y, v1.x);
+    float angle2 = atan2(v2.y, v2.x);
+    float radius = v1.length();
+    
+    float sweep = angle2 - angle1;
+    if (clockwise) {
+        if (sweep > 0) sweep -= TWO_PI;
+    } else {
+        if (sweep < 0) sweep += TWO_PI;
+    }
+    
+    for (int i = 0; i <= steps; i++){
+        float t = (float)i / (float)steps;
+        float angle = angle1 + sweep * t;
+        ofVec2f pos;
+        pos.x = center.x + cos(angle) * radius;
+        pos.y = center.y + sin(angle) * radius;
+        pnts.push_back(pos);
+    }
+    return pnts;
+}
+
 //Emulating the begin/end shape functionality
 void ofxGCode::begin_shape(){
     shape_pnts.clear();
@@ -314,7 +339,7 @@ void ofxGCode::end_shape(bool close){
     }
 }
 
-//drawing polygone from points
+//drawing polygon from points
 void ofxGCode::polygon(vector<ofVec2f> pnts, bool close_shape){
     begin_shape();
     for (int i=0; i<pnts.size(); i++){
@@ -345,6 +370,13 @@ void ofxGCode::line(float x1, float y1, float x2, float y2){
     GLine line;
     line.set(p1, p2);
     lines.push_back(line);
+
+    // Mirror into the arc-aware segment sequence
+    GSegment seg;
+    seg.type  = GSegment::Type::Line;
+    seg.start = p1;
+    seg.end   = p2;
+    segments.push_back(seg);
 }
 
 //adds a vector of GLines
@@ -354,7 +386,7 @@ void ofxGCode::add_lines(vector<GLine> new_lines){
     }
 }
 
-//Thick lines are just multiple lines, eenly spaced
+//Thick lines are just multiple lines, evenly spaced
 void ofxGCode::thick_line(float x1, float y1, float x2, float y2, float spacing, int layers){
     thick_line(ofVec2f(x1,y1), ofVec2f(x2,y2), spacing, layers);
 }
@@ -792,7 +824,7 @@ void ofxGCode::trim_outside(ofRectangle bounds){
     lines = trim_lines_outside(lines, bounds);
 }
 
-//takes a list of lines and rmeoves any lines that intersect a satic line
+//takes a list of lines and removes any lines that intersect a static line
 vector<GLine> ofxGCode::trim_intersecting_lines(vector<GLine> lines_to_trim, vector<GLine> static_lines){
     vector<GLine> val;
     for (int i=0; i<lines_to_trim.size(); i++){
@@ -943,7 +975,7 @@ vector<vector<ofVec2f>> ofxGCode::load_outlines(string file_path){
     ofFile file(file_path);
     
     if(!file.exists()){
-        cout<<"The outline file " << file_path << " is missing"<<endl;
+        ofLogError("ofxGCode") << "The outline file " << file_path << " is missing";
         return outlines;
     }
     ofBuffer buffer(file);
@@ -976,7 +1008,7 @@ vector<vector<ofVec2f>> ofxGCode::load_outlines(string file_path){
     }
     
     //add the last shape if there's anything there
-    cout<<cur_outline.size()<<endl;
+    ofLogVerbose("ofxGCode") << "outline size: " << cur_outline.size();
     if (cur_outline.size() > 1){
         outlines.push_back(cur_outline);
     }
@@ -991,7 +1023,7 @@ vector<GLine> ofxGCode::load_lines(string file_path){
     ofFile file(file_path);
     
     if(!file.exists()){
-        cout<<"The file " << file_path << " is missing"<<endl;
+        ofLogError("ofxGCode") << "The file " << file_path << " is missing";
         return new_lines;
     }
     ofBuffer buffer(file);
@@ -1044,7 +1076,500 @@ bool ofxGCode::checkInPolygon(vector<ofVec2f> p, ofVec2f pnt){
     return checkInPolygon(p, pnt.x, pnt.y);
 }
 
+//--------------------------------------------------------------
+// 3-axis G-code output
+//--------------------------------------------------------------
+
+string ofxGCode::toGCodeString(float safeZ){
+    vector<string> commands;
+    
+    // Preamble
+    commands.push_back("G21 ; mm mode");
+    commands.push_back("G90 ; absolute positioning");
+    commands.push_back("G0 Z" + ofToString(safeZ, 3));
+    commands.push_back("G0 X0 Y0");
+    
+    ofVec2f lastPos2D(0, 0);
+    bool penIsUp = true;
+    
+    for (size_t i = 0; i < lines.size(); i++){
+        GLine line = lines[i];
+        float z = (i < z_values.size()) ? z_values[i] : 0.0f;
+        
+        // If we're not at the start of this line, travel there
+        if (line.a != lastPos2D || penIsUp) {
+            if (!penIsUp) {
+                // Retract
+                commands.push_back("G0 Z" + ofToString(safeZ, 3));
+                penIsUp = true;
+            }
+            // Rapid to start XY
+            commands.push_back("G0 X" + ofToString(line.a.x, 3) + " Y" + ofToString(line.a.y, 3));
+            // Plunge to Z
+            commands.push_back("G1 Z" + ofToString(z, 3) + " F300");
+            penIsUp = false;
+        }
+        
+        // Feed move to end point
+        commands.push_back("G1 X" + ofToString(line.b.x, 3) + " Y" + ofToString(line.b.y, 3) + " Z" + ofToString(z, 3));
+        
+        lastPos2D = line.b;
+    }
+    
+    // Closing
+    commands.push_back("G0 Z" + ofToString(safeZ, 3));
+    commands.push_back("G0 X0 Y0");
+    commands.push_back("M2 ; end program");
+    
+    string result;
+    for (const auto& cmd : commands) {
+        result += cmd + "\n";
+    }
+    return result;
+}
+
+void ofxGCode::save3D(string name, float safeZ){
+    string gcodeStr = toGCodeString(safeZ);
+    
+    ofFile myTextFile;
+    myTextFile.open(name, ofFile::WriteOnly);
+    myTextFile << gcodeStr;
+    
+    ofLogNotice("ofxGCode") << "3D G-code saved to " << name;
+}
 
 
+// ===========================================================================
+//  Biarc Bezier approximation
+//
+//  Implements the biarc method described by D. Lacko:
+//  http://dlacko.org/blog/2016/10/19/approximating-bezier-curves-by-biarcs/
+//
+//  This was inspired by Austin Whittier's Observable notebook:
+//  https://observablehq.com/@awhitty/approximating-bezier-curves-for-cnc
+//  Whittier's notebook explores circular arc approximation of Bezier curves
+//  for CNC G-code, and explicitly points to the biarc method (above) as
+//  "a better way" that guarantees G1 tangent continuity at arc joints —
+//  which is what this implementation uses.
+// ===========================================================================
 
+// ---------------------------------------------------------------------------
+// Internal helpers (file-scope static so they don't pollute the public API)
+// ---------------------------------------------------------------------------
+
+static ofVec2f s_bezier_eval(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, float t)
+{
+    float mt = 1.0f - t;
+    return p1*(mt*mt*mt) + c1*(3.f*mt*mt*t) + c2*(3.f*mt*t*t) + p2*(t*t*t);
+}
+
+// Unnormalized first derivative B'(t) of the cubic Bezier.
+static ofVec2f s_bezier_deriv(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, float t)
+{
+    float mt = 1.0f - t;
+    return (c1-p1)*(3.f*mt*mt) + (c2-c1)*(6.f*mt*t) + (p2-c2)*(3.f*t*t);
+}
+
+// Normalised tangent at t.  Falls back to (1,0) for degenerate curves.
+static ofVec2f s_bezier_tangent(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, float t)
+{
+    ofVec2f d = s_bezier_deriv(p1, c1, c2, p2, t);
+    float len = d.length();
+    return (len < 1e-8f) ? ofVec2f(1.f, 0.f) : d*(1.f/len);
+}
+
+// Intersection of parametric lines  P1+s·D1  and  P2+u·D2.
+// Returns false when the lines are parallel.
+static bool s_line_intersect(ofVec2f p1, ofVec2f d1,
+                              ofVec2f p2, ofVec2f d2,
+                              ofVec2f& result)
+{
+    float denom = d1.x*d2.y - d1.y*d2.x;
+    if (fabsf(denom) < 1e-10f) return false;
+    float s = ((p2.x-p1.x)*d2.y - (p2.y-p1.y)*d2.x) / denom;
+    result = p1 + d1*s;
+    return true;
+}
+
+// Centre of the unique circle that is tangent to 'tangent' at 'p1'
+// and also passes through 'p2'.
+// Returns false when the points are coincident or the chord is parallel
+// to the tangent (straight-line degenerate case).
+static bool s_arc_center(ofVec2f p1, ofVec2f tangent, ofVec2f p2, ofVec2f& center)
+{
+    ofVec2f perp_t(-tangent.y, tangent.x);          // perpendicular to tangent at p1
+    ofVec2f mid  = (p1 + p2) * 0.5f;
+    ofVec2f chord = p2 - p1;
+    if (chord.length() < 1e-10f) return false;
+    ofVec2f perp_chord(-chord.y, chord.x);           // perpendicular bisector direction
+    return s_line_intersect(p1, perp_t, mid, perp_chord, center);
+}
+
+// True when the arc travelling from 'point' (with that tangent) around
+// 'center' is clockwise.
+static bool s_arc_is_clockwise(ofVec2f point, ofVec2f center, ofVec2f tangent)
+{
+    ofVec2f r = point - center;
+    // cross(r, tangent) < 0  →  tangent is to the right of r  →  CW
+    return (r.x*tangent.y - r.y*tangent.x) < 0.f;
+}
+
+// ---------------------------------------------------------------------------
+// Single biarc fit
+// ---------------------------------------------------------------------------
+struct BiArcFit { GArc arc1, arc2; bool valid = false; };
+
+static BiArcFit s_fit_biarc(ofVec2f p1, ofVec2f t1, ofVec2f p2, ofVec2f t2)
+{
+    BiArcFit result;
+
+    // --- join point G = incenter of triangle (P1, P2, V) -----------------
+    ofVec2f V;
+    bool have_V = s_line_intersect(p1, t1, p2, t2, V);
+
+    // Guard against near-parallel tangents (V flies to infinity)
+    bool use_mid = !have_V
+                || (V - p1).length() > 1e5f
+                || std::isnan(V.x) || std::isnan(V.y);
+
+    ofVec2f G;
+    if (use_mid) {
+        G = (p1 + p2) * 0.5f;
+    } else {
+        float d_p2v  = (p2 - V).length();
+        float d_p1v  = (p1 - V).length();
+        float d_p1p2 = (p1 - p2).length();
+        float perim  = d_p2v + d_p1v + d_p1p2;
+        if (perim < 1e-10f) return result;   // degenerate triangle
+        G = (p1*d_p2v + p2*d_p1v + V*d_p1p2) / perim;
+    }
+
+    // --- arc 1: P1 → G, tangent T1 at P1 ----------------------------------
+    ofVec2f C1;
+    bool ok1 = s_arc_center(p1, t1, G, C1);
+    float R1  = ok1 ? (p1 - C1).length() : 0.f;
+    bool cw1  = ok1 ? s_arc_is_clockwise(p1, C1, t1) : false;
+
+    result.arc1.start     = p1;
+    result.arc1.end       = G;
+    result.arc1.center    = C1;
+    result.arc1.radius    = ok1 ? R1 : 0.f;
+    result.arc1.clockwise = cw1;
+
+    // --- arc 2: G → P2, tangent T2 at P2 ----------------------------------
+    ofVec2f C2;
+    bool ok2 = s_arc_center(p2, t2, G, C2);
+    float R2  = ok2 ? (p2 - C2).length() : 0.f;
+    bool cw2  = ok2 ? s_arc_is_clockwise(p2, C2, t2) : false;
+
+    result.arc2.start     = G;
+    result.arc2.end       = p2;
+    result.arc2.center    = C2;
+    result.arc2.radius    = ok2 ? R2 : 0.f;
+    result.arc2.clockwise = cw2;
+
+    result.valid = true;
+    return result;
+}
+
+// ---------------------------------------------------------------------------
+// Hausdorff distance from B(t) on [t0, t1] to a full circle (C, R).
+//
+// The one-sided Hausdorff distance is:
+//
+//   max_{t ∈ [t0,t1]}  |dist(B(t), C) - R|
+//
+// The interior extrema of dist(B(t), C) occur where its derivative is zero:
+//
+//   d/dt dist(B(t), C)  =  (B(t) - C) · B'(t)  /  dist(B(t), C)  =  0
+//
+//   ⟹  (B(t) - C) · B'(t)  =  0          (degree-5 polynomial)
+//
+// We find all roots in [t0, t1] by scanning for sign changes at N_COARSE
+// equally-spaced samples, then bisecting each bracket to 16 iterations.
+// The maximum radial error over endpoints + all critical points is returned.
+// ---------------------------------------------------------------------------
+static float s_hausdorff_bezier_circle(
+    ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2,
+    float t0, float t1,
+    ofVec2f C, float R)
+{
+    // Radial error at a given parameter
+    auto err_at = [&](float t) -> float {
+        return fabsf((s_bezier_eval(p1, c1, c2, p2, t) - C).length() - R);
+    };
+
+    // Value of (B(t)-C)·B'(t) — zero at critical points of dist(B(t), C)
+    auto radial_dot = [&](float t) -> float {
+        ofVec2f r  = s_bezier_eval(p1, c1, c2, p2, t) - C;
+        ofVec2f dp = s_bezier_deriv(p1, c1, c2, p2, t);
+        return r.x*dp.x + r.y*dp.y;
+    };
+
+    const int N_COARSE = 32;
+    float max_err  = MAX(err_at(t0), err_at(t1));   // always check endpoints
+    float prev_t   = t0;
+    float prev_dot = radial_dot(t0);
+
+    for (int i = 1; i <= N_COARSE; i++) {
+        float t   = t0 + (t1 - t0) * (float)i / (float)N_COARSE;
+        float dot = radial_dot(t);
+        max_err   = MAX(max_err, err_at(t));
+
+        if (prev_dot * dot < 0.f) {
+            // Sign change → critical point in (prev_t, t): bisect to refine
+            float lo = prev_t, hi = t;
+            for (int k = 0; k < 16; k++) {
+                float mid = (lo + hi) * 0.5f;
+                if (radial_dot(mid) * prev_dot < 0.f) hi = mid;
+                else                                  lo = mid;
+            }
+            max_err = MAX(max_err, err_at((lo + hi) * 0.5f));
+        }
+
+        prev_dot = dot;
+        prev_t   = t;
+    }
+    return max_err;
+}
+
+// ---------------------------------------------------------------------------
+// Hausdorff error of a biarc fit against the true Bezier.
+//
+// Arc 1 covers the first half of the curve parameter range [0, 0.5],
+// arc 2 covers [0.5, 1].  The split at 0.5 is an approximation of the
+// true parameter value at the biarc join point G; it is tight enough in
+// practice because recursive subdivision keeps each segment small.
+//
+// Degenerate (straight-line) arcs fall back to point-to-segment distance.
+// ---------------------------------------------------------------------------
+static float s_biarc_error(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2,
+                            const BiArcFit& fit)
+{
+    // Helper: max distance from Bezier samples on [ta, tb] to a line segment
+    auto line_error = [&](float ta, float tb, ofVec2f A, ofVec2f B) -> float {
+        float max_d = 0.f;
+        ofVec2f seg = B - A;
+        float seg_len = seg.length();
+        for (int i = 0; i <= 8; i++) {
+            float t = ta + (tb - ta) * (float)i / 8.f;
+            ofVec2f P = s_bezier_eval(p1, c1, c2, p2, t);
+            float d;
+            if (seg_len < 1e-8f) {
+                d = (P - A).length();
+            } else {
+                ofVec2f dv = seg * (1.f / seg_len);
+                float proj = ofClamp((P - A).dot(dv), 0.f, seg_len);
+                d = (P - (A + dv * proj)).length();
+            }
+            if (d > max_d) max_d = d;
+        }
+        return max_d;
+    };
+
+    float err1 = fit.arc1.isLine()
+        ? line_error(0.f, 0.5f, fit.arc1.start, fit.arc1.end)
+        : s_hausdorff_bezier_circle(p1, c1, c2, p2, 0.f, 0.5f,
+                                    fit.arc1.center, fit.arc1.radius);
+
+    float err2 = fit.arc2.isLine()
+        ? line_error(0.5f, 1.f, fit.arc2.start, fit.arc2.end)
+        : s_hausdorff_bezier_circle(p1, c1, c2, p2, 0.5f, 1.f,
+                                    fit.arc2.center, fit.arc2.radius);
+
+    return MAX(err1, err2);
+}
+
+// ---------------------------------------------------------------------------
+// Recursive subdivision
+// ---------------------------------------------------------------------------
+static void s_bezier_to_biarcs(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2,
+                                float tolerance, int depth,
+                                vector<GArc>& out)
+{
+    // Skip zero-length segments
+    if ((p1 - p2).length() < 0.001f) return;
+
+    if (depth <= 0) {
+        // Max recursion reached: fall back to a straight line segment
+        GArc a;
+        a.start = p1;  a.end = p2;  a.radius = 0.f;
+        out.push_back(a);
+        return;
+    }
+
+    ofVec2f t1 = s_bezier_tangent(p1, c1, c2, p2, 0.f);
+    ofVec2f t2 = s_bezier_tangent(p1, c1, c2, p2, 1.f);
+
+    BiArcFit fit = s_fit_biarc(p1, t1, p2, t2);
+
+    if (!fit.valid) {
+        GArc a;
+        a.start = p1;  a.end = p2;  a.radius = 0.f;
+        out.push_back(a);
+        return;
+    }
+
+    if (s_biarc_error(p1, c1, c2, p2, fit) <= tolerance) {
+        out.push_back(fit.arc1);
+        out.push_back(fit.arc2);
+    } else {
+        // De Casteljau subdivision at t = 0.5
+        ofVec2f m01   = (p1 + c1)   * 0.5f;
+        ofVec2f m12   = (c1 + c2)   * 0.5f;
+        ofVec2f m23   = (c2 + p2)   * 0.5f;
+        ofVec2f m012  = (m01 + m12) * 0.5f;
+        ofVec2f m123  = (m12 + m23) * 0.5f;
+        ofVec2f m0123 = (m012 + m123) * 0.5f;
+
+        s_bezier_to_biarcs(p1,    m01,  m012,  m0123, tolerance, depth-1, out);
+        s_bezier_to_biarcs(m0123, m123, m23,   p2,    tolerance, depth-1, out);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Public static: decompose Bezier → biarcs
+// ---------------------------------------------------------------------------
+vector<GArc> ofxGCode::bezier_to_biarcs(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2,
+                                         float tolerance, int max_depth)
+{
+    vector<GArc> out;
+    s_bezier_to_biarcs(p1, c1, c2, p2, tolerance, max_depth, out);
+    return out;
+}
+
+// ---------------------------------------------------------------------------
+// bezier_arc() — draw a Bezier using biarcs
+// ---------------------------------------------------------------------------
+void ofxGCode::bezier_arc(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, float tolerance)
+{
+    // Transform control points to screen space (honours ofTranslate/Scale/Rotate)
+    ofVec2f tp1 = getModelPoint(p1);
+    ofVec2f tc1 = getModelPoint(c1);
+    ofVec2f tc2 = getModelPoint(c2);
+    ofVec2f tp2 = getModelPoint(p2);
+
+    // --- Preview: add linearised curve to lines so draw() works as usual ---
+    {
+        vector<ofVec2f> pnts = get_bezier_pnts(tp1, tc1, tc2, tp2, 20);
+        for (int i = 0; i < (int)pnts.size()-1; i++) {
+            ofVec2f a = pnts[i], b = pnts[i+1];
+            if (clip.clip(a, b)) {
+                GLine l;
+                l.set(a, b);
+                lines.push_back(l);
+            }
+        }
+    }
+
+    // --- Arc segments for the G2/G3 save pipeline -------------------------
+    vector<GArc> arcs = bezier_to_biarcs(tp1, tc1, tc2, tp2, tolerance);
+    for (const GArc& a : arcs) {
+        GSegment seg;
+        if (a.isLine()) {
+            seg.type = GSegment::Type::Line;
+        } else {
+            seg.type = a.clockwise ? GSegment::Type::ArcCW : GSegment::Type::ArcCCW;
+        }
+        seg.start  = a.start;
+        seg.end    = a.end;
+        seg.center = a.center;
+        segments.push_back(seg);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// arc() — add a single circular arc directly
+// ---------------------------------------------------------------------------
+void ofxGCode::arc(ofVec2f start, ofVec2f end, ofVec2f center, bool clockwise)
+{
+    ofVec2f ts = getModelPoint(start);
+    ofVec2f te = getModelPoint(end);
+    ofVec2f tc = getModelPoint(center);
+
+    // Linearised preview → lines
+    {
+        vector<ofVec2f> pnts = get_arc_points_ijk(ts, te, tc, clockwise, 32);
+        for (int i = 0; i < (int)pnts.size()-1; i++) {
+            ofVec2f a = pnts[i], b = pnts[i+1];
+            if (clip.clip(a, b)) {
+                GLine l;
+                l.set(a, b);
+                lines.push_back(l);
+            }
+        }
+    }
+
+    // Arc segment for G2/G3 output
+    GSegment seg;
+    seg.type   = clockwise ? GSegment::Type::ArcCW : GSegment::Type::ArcCCW;
+    seg.start  = ts;
+    seg.end    = te;
+    seg.center = tc;
+    segments.push_back(seg);
+}
+
+// ---------------------------------------------------------------------------
+// save_arcs() — pen-plotter save with G2/G3 arc commands
+// ---------------------------------------------------------------------------
+void ofxGCode::save_arcs(string name)
+{
+    const float ipp = 1.0f / pixels_per_inch;
+
+    vector<string> commands;
+    commands.push_back("M3 S0");
+    commands.push_back("G0 X0 Y0");
+
+    ofVec2f last_pos(0.f, 0.f);
+    bool pen_is_down = false;
+
+    for (const GSegment& seg : segments) {
+        ofVec2f s(seg.start.x  * ipp, seg.start.y  * ipp);
+        ofVec2f e(seg.end.x    * ipp, seg.end.y    * ipp);
+        ofVec2f c(seg.center.x * ipp, seg.center.y * ipp);
+
+        // Rapid to start of this segment if needed
+        if (s != last_pos) {
+            if (pen_is_down) {
+                commands.push_back("M3 S0");
+                pen_is_down = false;
+            }
+            commands.push_back("G0 X" + ofToString(s.x, 4) + " Y" + ofToString(s.y, 4));
+        }
+
+        // Pen down if not already
+        if (!pen_is_down) {
+            commands.push_back("M3 S" + ofToString(pen_down_value));
+            pen_is_down = true;
+        }
+
+        // The move itself
+        if (seg.type == GSegment::Type::Line) {
+            commands.push_back("G1 X" + ofToString(e.x, 4) + " Y" + ofToString(e.y, 4));
+        } else {
+            // I, J are the arc-centre offset from the current position
+            float I = c.x - s.x;
+            float J = c.y - s.y;
+            string cmd = (seg.type == GSegment::Type::ArcCW) ? "G2" : "G3";
+            commands.push_back(cmd
+                + " X" + ofToString(e.x, 4)
+                + " Y" + ofToString(e.y, 4)
+                + " I" + ofToString(I, 4)
+                + " J" + ofToString(J, 4));
+        }
+
+        last_pos = e;
+    }
+
+    commands.push_back("M3 S0");
+    commands.push_back("G0 X0 Y0");
+
+    ofLogNotice("ofxGCode") << "save_arcs: " << commands.size() << " commands";
+
+    ofFile file;
+    file.open(name, ofFile::WriteOnly);
+    for (const string& cmd : commands) file << cmd << "\n";
+
+    ofLogNotice("ofxGCode") << "save_arcs: saved " << name;
+}
 

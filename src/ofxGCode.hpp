@@ -15,6 +15,34 @@
 #include "GLine.hpp"
 #include "GCodeLineGroup.h"
 
+// ---------------------------------------------------------------------------
+// Biarc types
+// ---------------------------------------------------------------------------
+
+/// A single circular arc produced by the biarc Bezier approximation.
+/// If isLine() returns true the arc is degenerate and should be a G1 move.
+struct GArc {
+    ofVec2f start;
+    ofVec2f end;
+    ofVec2f center;
+    float   radius    = 0.f;
+    bool    clockwise = false;
+
+    bool isLine() const { return radius < 0.001f; }
+};
+
+/// Unified move entry used by the arc-aware save pipeline.
+/// Populated by line() and bezier_arc() / arc() calls; consumed by save_arcs().
+struct GSegment {
+    enum class Type { Line, ArcCW, ArcCCW };
+    Type    type   = Type::Line;
+    ofVec2f start;
+    ofVec2f end;
+    ofVec2f center;  ///< Arc centre in screen-space pixels (arcs only)
+};
+
+// ---------------------------------------------------------------------------
+
 //ofxGCode is the core class of this library
 //an ofxGCode object represents a single g-code file (typically one pass on the plotter)
 //use multiple ofxGCode objects to create layered drawings (for multiple colors etc)
@@ -38,6 +66,10 @@ public:
     vector<ofVec2f> shape_pnts; //used for begin_shape / end_shape
     
     vector<GLine> lines;        //the collection of lines that make up this drawing
+
+    /// Arc-aware move sequence.  Populated by every line() call and by
+    /// bezier_arc() / arc() calls.  Used by save_arcs() to emit G2/G3 commands.
+    vector<GSegment> segments;
     
     Clipping clip;              //clipping mask to make sure we don't have lines out of bounds
     
@@ -78,8 +110,19 @@ public:
     
     //--- Saving
     
-    ///saves the file to the bin/data folder
+    ///saves the file to the bin/data folder (2D pen plotter format with M3 pen control)
     void save(string name);
+    
+    ///saves 3-axis G-code to a file. Uses G0/G1 with X Y Z F (no pen servo commands).
+    ///safeZ is the height for rapid travel moves between cuts.
+    void save3D(string name, float safeZ = 5.0f);
+    
+    ///returns the G-code as a string (3-axis format) instead of writing to file
+    string toGCodeString(float safeZ = 5.0f);
+    
+    // Z height for each GLine (optional, for 3D toolpaths)
+    // When non-empty, lines[i] uses z_values[i] for its Z coordinate
+    vector<float> z_values;
     
     
     //--- Rectangles
@@ -113,6 +156,10 @@ public:
     static vector<ofVec2f> get_oval_pnts(ofVec2f center, float width, float height, int steps, float angle_offset=0);
     
     static vector<ofVec2f> get_arc_pnts(ofVec2f center, float size, int steps, float start_angle, float end_angle, float height_scale = 1);
+    
+    ///static function to get points along an arc defined by start, end, center (I,J,K style)
+    ///clockwise determines the arc direction. steps is the resolution.
+    static vector<ofVec2f> get_arc_points_ijk(ofVec2f start, ofVec2f end, ofVec2f center, bool clockwise, int steps = 32);
     
     
     //--- Polygons
@@ -161,6 +208,31 @@ public:
     void bezier(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps = 50);
     ///static function that returns a vector of the points that make up a bezier curve with the given values. steps defines the number of points that will be used in the line
     static vector<ofVec2f> get_bezier_pnts(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, int steps);
+
+    /// Draws a cubic Bezier curve approximated by biarcs (pairs of circular arcs).
+    /// tolerance is the maximum allowed deviation in pixels between the true curve
+    /// and the arc approximation.  Adds G2/G3-ready entries to the segments list;
+    /// also adds a linearised preview to the lines list for draw().
+    /// Use save_arcs() to emit a file with G2/G3 arc commands.
+    void bezier_arc(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2, float tolerance = 1.0f);
+
+    /// Adds a single circular arc directly.
+    /// Like bezier_arc(), the arc is stored in segments for save_arcs() and
+    /// linearised into lines for draw().
+    void arc(ofVec2f start, ofVec2f end, ofVec2f center, bool clockwise);
+
+    /// Decomposes a cubic Bezier into a sequence of GArc segments whose deviation
+    /// from the true curve is at most tolerance (in user units / pixels).
+    /// max_depth limits recursion; 8 handles all practical curves.
+    static vector<GArc> bezier_to_biarcs(ofVec2f p1, ofVec2f c1, ofVec2f c2, ofVec2f p2,
+                                          float tolerance = 1.0f, int max_depth = 8);
+
+    //--- Arc-aware saving
+
+    /// Like save(), but emits G2/G3 arc commands for any arcs added via
+    /// bezier_arc() or arc().  Straight lines (including those from line(),
+    /// polygon(), rect(), etc.) are still emitted as G1 moves.
+    void save_arcs(string name);
     
     
     //--- Dot
