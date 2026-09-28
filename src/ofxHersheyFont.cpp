@@ -178,8 +178,8 @@ void ofxHersheyFont::drawChar(int asciiValue, ofxGCode * gcode) {
 //--------------------------------------------------------------
 float ofxHersheyFont::getWidth(string stringValue, float scale){
 	float stringWidth = 0;
-    float longest_string_width;
-    
+    float longest_string_width = 0;
+
 	for (int i = 0; i < stringValue.size(); i++)
 	{
 		int asciiValue = stringValue.at(i);
